@@ -1380,6 +1380,7 @@
 
                 dataNascimentoField.addEventListener("blur", handleNascimentoChange);
                 dataNascimentoField.addEventListener("change", handleNascimentoChange);
+                dataNascimentoField.addEventListener("input", handleNascimentoChange);
             }
 
             document.getElementById("cpfresponsavel").addEventListener("input", function () {
@@ -1708,10 +1709,10 @@
             }
         });
 
-        // Lógica unificada para exibir a seção do Responsável
-        document.addEventListener("DOMContentLoaded", function () {
-            window.verificarNecessidadeResponsavel = function () {
-                const tipoDeficiencia = document.getElementById("tipo_def_ask");
+            // Lógica unificada para exibir a seção do Responsável
+            document.addEventListener("DOMContentLoaded", function () {
+                window.verificarNecessidadeResponsavel = function () {
+                    const tipoDeficiencia = document.getElementById("tipo_def_ask");
                 const cpfResponsavel = document.getElementById("cpfresponsavel");
                 const nomeResponsavel = document.getElementById("nomeCompletoResponsavel");
                 const sectionResponsavel = document.getElementById("dados-responsavel");
@@ -1760,9 +1761,7 @@
             };
 
             // Event listeners
-            const pcdAsk = document.getElementById("pcd_ask");
             const tipoDeficiencia = document.getElementById("tipo_def_ask");
-            if (pcdAsk) pcdAsk.addEventListener("change", window.verificarNecessidadeResponsavel);
             if (tipoDeficiencia) tipoDeficiencia.addEventListener("change", window.verificarNecessidadeResponsavel);
 
             // Also run on load to catch pre-filled data

@@ -1701,7 +1701,6 @@
         document.addEventListener("DOMContentLoaded", function () {
             window.verificarNecessidadeResponsavel = function () {
                 const tipoDeficiencia = document.getElementById("tipo_def_ask");
-                const pcdAsk = document.getElementById("pcd_ask");
                 const cpfResponsavel = document.getElementById("cpfresponsavel");
                 const nomeResponsavel = document.getElementById("nomeCompletoResponsavel");
                 const sectionResponsavel = document.getElementById("dados-responsavel");
@@ -1714,7 +1713,7 @@
 
                 let idade = parseInt(idadeField.value) || 0;
                 let isMenor = (idade > 0 && idade < 18);
-                let isIntelectual = (pcdAsk && pcdAsk.value === "sim" && tipoDeficiencia && tipoDeficiencia.value === "intelectual");
+                let isIntelectual = (tipoDeficiencia && tipoDeficiencia.value.toLowerCase() === "intelectual");
 
                 console.log(`Checking Responsible: Age=${idade}, Menor=${isMenor}, Intel=${isIntelectual}`);
 

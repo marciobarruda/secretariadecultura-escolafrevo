@@ -1,0 +1,1373 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Matrícula 2025</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script> <!-- Adicionado Axios -->
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            width: 60%;
+            margin: auto;
+            background: #fff;
+            padding: 20px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            margin-top: 80px;
+        }
+
+        h2,
+        h3 {
+            background: #f4a000;
+            color: white;
+            padding: 10px;
+            text-align: center;
+            border-radius: 10px;
+            width: 100%;
+            box-sizing: border-box;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        h3 i {
+            margin-right: 10px;
+        }
+
+        label {
+            font-weight: bold;
+            display: block;
+            margin-top: 10px;
+            width: 100%;
+            font-size: 14px;
+        }
+
+        input,
+        select,
+        textarea {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+        }
+
+        .button {
+            background: #f4a000;
+            /* Cor de fundo */
+            color: white;
+            /* Cor do texto */
+            padding: 15px 20px;
+            /* Aumenta o tamanho do botão */
+            border: none;
+            /* Remove bordas */
+            cursor: pointer;
+            /* Cursor de mãozinha */
+            width: 100%;
+            /* Botão com 100% de largura */
+            max-width: 400px;
+            /* Limita a largura máxima */
+            border-radius: 5px;
+            /* Bordas arredondadas */
+            margin-top: 20px;
+            /* Espaço superior */
+            font-size: 18px;
+            /* Tamanho da fonte */
+            text-align: center;
+            /* Texto centralizado */
+            display: block;
+            /* Garante que o botão será um bloco */
+            margin-left: auto;
+            /* Centraliza o botão horizontalmente */
+            margin-right: auto;
+            /* Centraliza o botão horizontalmente */
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+            /* Sombra para efeito de profundidade */
+            transition: background-color 0.3s, transform 0.2s;
+            /* Efeito de transição */
+        }
+
+        .button:hover {
+            background-color: #e39600;
+            /* Cor ao passar o mouse */
+            transform: scale(1.05);
+            /* Aumenta um pouco o tamanho do botão */
+        }
+
+        .button:active {
+            background-color: #d38400;
+            /* Cor ao clicar */
+            transform: scale(1);
+            /* Retorna ao tamanho original */
+        }
+
+
+        .progress {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            background: #ddd;
+            padding: 15px;
+            position: fixed;
+            width: 100%;
+            top: 0;
+            left: 0;
+            z-index: 1000;
+        }
+
+        .progress div {
+            width: 40px;
+            height: 40px;
+            background: #bbb;
+            color: white;
+            text-align: center;
+            line-height: 40px;
+            border-radius: 50%;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            transition: background 0.3s;
+        }
+
+        .progress div.active {
+            background: #f4a000;
+        }
+
+        .section {
+            display: block;
+            margin-top: 20px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .modal-content button {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #f00;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        #message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%;
+            max-width: 600px;
+            background: #9b0f08;
+            /* Mesma cor do cabeçalho do formulário */
+            color: white;
+            padding: 20px;
+            font-size: 22px;
+            font-weight: bold;
+            text-align: center;
+            border-radius: 10px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            border: 3px solid #8d0707;
+            /* Tom um pouco mais escuro para dar contraste */
+        }
+
+        #message::before {
+            content: "⚠️ Atenção! ";
+            font-weight: bold;
+            display: block;
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+    </style>
+    <script>
+        function updateProgress(sectionId) {
+            let progressCircles = document.querySelectorAll('.progress div');
+            let sectionIndex = Array.from(document.querySelectorAll('.section')).findIndex(section => section.id === sectionId);
+            progressCircles.forEach((circle, index) => {
+                circle.classList.toggle('active', index === sectionIndex);
+            });
+        }
+    </script>
+</head>
+
+<body>
+    <form id="userForm">
+        <div class="progress">
+            <div class="active" onclick="updateProgress('dados-pessoais')">1</div>
+            <div onclick="updateProgress('endereco')">2</div>
+            <div onclick="updateProgress('dados-saude')">3</div>
+            <div onclick="updateProgress('dados-turma')">4</div>
+            <div onclick="updateProgress('documentacao')">5</div>
+        </div>
+
+        <div class="container">
+            <h2>Matrícula 2025</h2>
+
+            <label for="tipoMatricula">Tipo de matrícula</label>
+            <input type="text" id="tipoMatricula" name="tipomatricula" placeholder="Informe o tipo da matrícula"
+                value="{{ $json.query.tipo_de_matricula }}" readonly>
+            <label for="proximonivel" style="display: none;">Próximo Nível</label>
+            <input type="text" id="proximonivel" placeholder="Próximo Nível" value="{{ $json.query.nivel }}"
+                style="display: none;" readonly>
+
+            <div class="section" id="dados-pessoais" onfocusin="updateProgress('dados-pessoais')">
+                <h3><i class="fas fa-user"></i> Dados Pessoais</h3>
+                <label for="cpf">CPF</label>
+                <input type="text" id="cpf" name="cpf_aluno" placeholder="Digite o CPF" value="{{ $json.query.cpf }}"
+                    onblur="buscarNome()">
+                <label for="nome">Nome</label>
+                <input type="text" id="nomeCompleto" name="nome" required pattern="[A-Za-zÀ-ÖØ-öø-ÿ\s]+"
+                    oninput="this.value = this.value.replace(/[^A-Za-zÀ-ÖØ-öø-ÿ\s]/g, '')"
+                    vaue="{{ $json.query.nome }}">
+                <label for="datanascimento">Data de nascimento</label>
+                <input type="date" id="datanascimento" name="data_nasc" placeholder="Informe a data de nascimento"
+                    onchange="calcularIdade(); buscarFaixaetaria()">
+                <label for="idade">Idade</label>
+                <input type="number" id="idade" name="idade" placeholder="Informe a sua idade" readonly>
+                <label for="faixaetaria">Faixa etária</label>
+                <input type="text" id="faixaetaria" name="faixa_etaria" placeholder="Faixa etária" readonly>
+
+                <label for="cpfresponsavel" style="display: none;">CPF do responsável</label>
+                <input type="text" id="cpfresponsavel" name="cpf_responsavel" placeholder="Digite o CPF do responsável"
+                    onblur="buscarNomeResponsavel()" style="display: none;">
+                <label for="nomeresponsavel" style="display: none;">Nome do responsável</label>
+                <input type="text" id="nomeCompletoResponsavel" name="nome_responsavel_legal" required
+                    pattern="[A-Za-zÀ-ÖØ-öø-ÿ\s]+"
+                    oninput="this.value = this.value.replace(/[^A-Za-zÀ-ÖØ-öø-ÿ\s]/g, '')" vaue="{{ $json.query.nome }}"
+                    style="display: none;">
+
+
+                <label for="racacor">Raça/Cor</label>
+                <select id="racacor" name="raca_cor">
+                    <option value="selecione"> </option>
+                    <option value="amarela">Amarela</option>
+                    <option value="branca">Branca</option>
+                    <option value="indigena">Indígena</option>
+                    <option value="parda">Parda</option>
+                    <option value="preta">Preta</option>
+                    <option value="naoinformar">Prefiro não informar</option>
+                </select>
+
+
+                <label for="genero">Gênero</label>
+                <select id="genero" name="genero">
+                    <option value="selecione"> </option>
+                    <option value="feminino">Feminino</option>
+                    <option value="masculino">Masculino</option>
+                    <option value="naoinformar">Prefiro não informar</option>
+                </select>
+            </div>
+
+            <div class="section" id="endereco" onfocusin="updateProgress('endereco')">
+                <h3><i class="fas fa-map-marker-alt"></i> Endereço</h3>
+                <label for="cep">CEP</label>
+                <input type="text" id="cep" name="cep" required maxlength="8"
+                    oninput="this.value = this.value.replace(/\D/g, '')" onchange="buscarEndereco()">
+                <label for="logradouro">Logradouro</label>
+                <input type="text" id="logradouro" name="logradouro" placeholder="Digite o nome da Rua/AV/Estrada">
+                <label for="numero">Número</label>
+                <input type="text" id="numero" name="numero" placeholder="Digite o número">
+                <label for="complemento">Complemento</label>
+                <input type="text" id="complemento" name="complemento" placeholder="Digite o complemento">
+                <label for="bairro">Bairro</label>
+                <input type="text" id="bairro" name="bairro" placeholder="Digite seu bairro">
+                <label for="cidade">Cidade</label>
+                <input type="text" id="cidade" name="cidade" placeholder="Digite sua cidade">
+                <label for="email">E-mail</label>
+                <input type="email" id="email" name="email" placeholder="Digite seu e-mail">
+                <label for="confirmarEmail">Confirme seu E-mail</label>
+                <input type="email" id="confirmarEmail" placeholder="Confirme seu e-mail">
+                <label for="whatsapp">WhatsApp</label>
+                <input type="text" id="whatsapp" name="telefone"
+                    placeholder="Digite seu número de WhatsApp (11 dígitos)">
+                <label for="confirmarWhatsApp">Confirme seu número de Whatsapp</label>
+                <input type="text" id="confirmarWhatsApp" placeholder="Confirme seu WhatsApp">
+
+            </div>
+
+            <div class="section" id="dados-saude" onfocusin="updateProgress('dados-saude')">
+                <h3><i class="fas fa-heartbeat"></i> Dados de Saúde</h3>
+                <label for="deficiencia">É pessoa com deficiência (PCD)?</label>
+                <select id="pcd_ask" name="pcd_ask">
+                    <option value="selecione"> </option>
+                    <option value="nao">Não</option>
+                    <option value="sim">Sim</option>
+                </select>
+                <label for="tipodeficiencia">Qual o tipo de deficiência?</label>
+                <select id="tipo_def_ask" name="tipo_pcd_ask">
+                    <option value="selecione"> </option>
+                    <option value="auditiva">Auditiva</option>
+                    <option value="fisica_motora">Física/motora</option>
+                    <option value="intelectual">Intelectual</option>
+                    <option value="visao">Visual</option>
+                </select>
+                <label for="qualdeficiencia">Qual a deficiência?</label>
+                <select id="qual_deficiencia_ask" name="qual_deficiencia_ask">
+                </select>
+
+                <label for="contraindicacao_medica_ask">Possui alguma contraindicação médica para a prática de atividade
+                    física ou doença crônica?</label>
+                <select id="contraindicacao_medica_ask" name="contraindicacao_medica_ask">
+                    <option value="selecione"> </option>
+                    <option value="nao">Não</option>
+                    <option value="sim">Sim</option>
+                </select>
+                <label for="qual_contraindicacao_ask" style="display: none;">Qual é a contraindicação ou doença
+                    crônica?</label>
+                <input type="text" id="qual_contraindicacao_ask" name="qual_contraindicacao_ask"
+                    placeholder="Informe qual a contra-indicação" style="display: none;">
+
+                <label for="realiza_atv_ask">Realiza alguma atividade física?</label>
+                <select id="realiza_atv_ask" name="realiza_atv_ask">
+                    <option value="selecione"> </option>
+                    <option value="nao">Não</option>
+                    <option value="sim">Sim</option>
+                </select>
+                <label for="descreva_atv_ask" style="display: none;">Descreva a atividade</label>
+                <input type="text" id="descreva_atv_ask" name="descreva_atv_ask" placeholder="Descreva a atividade"
+                    style="display: none;">
+
+                <label for="usa_mediamento_ask">Faz uso contínuo de algum medicamento?</label>
+                <select id="usa_mediamento_ask" name="usa_medicamento_ask">
+                    <option value="selecione"> </option>
+                    <option value="nao">Não</option>
+                    <option value="sim">Sim</option>
+                </select>
+                <label for="descreva_medicamento_ask" style="display: none;">Descreva quais medicamentos</label>
+                <input type="text" id="descreva_medicamento_ask" name="descreva_medicamento_ask"
+                    placeholder="Descreva medicamentos" style="display: none;">
+
+                <label for="alergia_ask">Possui alguma alergia ou contraindicação ao uso de algum medicamento?</label>
+                <select id="alergia_ask" name="alergia_ask">
+                    <option value="selecione"> </option>
+                    <option value="nao">Não</option>
+                    <option value="sim">Sim</option>
+                </select>
+                <label for="descreva_alergia_ask" style="display: none;">Descreva qual a alergia ou contraindicação ao
+                    uso
+                    de algum medicamento</label>
+                <input type="text" id="descreva_alergia_ask" name="descreva_alergia_ask" placeholder="Descreva alergias"
+                    style="display: none;">
+            </div>
+
+            <div class="section" id="dados-turma" onfocusin="updateProgress('dados-turma')">
+                <h3><i class="fas fa-music"></i> Dados da Turma</h3>
+                <label for="modalidade">Modalidade</label>
+                <input type="text" id="modalidade" name="modalidade" placeholder="Modalidade" readonly>
+                <label for="nivel">Nível</label>
+                <select id="nivel" name="nivel">
+                    <option value="">Selecione o nivel</option>
+                    <option value="nivel1">Livre</option>
+                    <option value="nivel2">Iniciante</option>
+                    <option value="nivel2">Intermediário</option>
+                </select>
+                <label for="turma">Turma</label>
+                <select id="turma" name="turma" onchange="preencherDetalhesTurma()">
+                    <option value="">Selecione a turma</option>
+                </select>
+
+                <label for="dias">Dias</label>
+                <input type="text" id="dias" name="dias" readonly>
+
+                <label for="horario">Horário</label>
+                <input type="text" id="horario" name="horario" readonly>
+
+                <label for="local">Sala</label>
+                <input type="text" id="local" name="sala" readonly>
+
+                <label for="professor">Professor</label>
+                <input type="text" id="professor" name="professor" readonly>
+            </div>
+
+            <div class="section" id="documentacao" onfocusin="updateProgress('documentacao')">
+                <h3><i class="fas fa-file-alt"></i> Documentação</h3>
+                <label for="possuirg">Possui RG:</label>
+                <select id="possuirg" name="possuirg">                    
+                <option value=""></option>
+                <option value="sim">Sim</option>
+                <option value="nao">Não</option>
+                </select>
+                <label for="rg_frente" style="display: none;">Anexar RG/CNH frente</label>
+                <input type="file" id="rg_frente" name="rg_frente" style="display: none;">
+                <label for="rg_verso" style="display: none;">Anexar RG/CNH verso</label>
+                <input type="file" id="rg_verso" name="rg_verso" style="display: none;">
+                <label for="certidaonascimento" style="display: none;">Anexar certidão de nascimento</label>
+                <input type="file" id="certidao_nasc" name="certidao_nasc" style="display: none;">
+                <label for="parecer_medico">Anexar laudo médico</label>
+                <input type="file" id="parecer_medico" name="parecer_medico">
+            </div>
+            <div>
+                <button class="button" id="submitButton">Enviar Matrícula</button>
+            </div>
+        </div>
+
+        <div id="message" style="display: none;">
+            A Escola de Frevo do Recife destina-se a alunos com idade mínima completa de 6 anos. Você já pode fechar
+            esta
+            janela.
+        </div>
+    </form>
+    <script>
+        function toggleFields() {
+            var rgSelect = document.getElementById("possuirg");
+            var rgFrente = document.getElementById("rg_frente");
+            var rgVerso = document.getElementById("rg_verso");
+            var certidaoNasc = document.getElementById("certidao_nasc");
+            var labelRgFrente = document.getElementById("label_rg_frente");
+            var labelRgVerso = document.getElementById("label_rg_verso");
+            var labelCertidaoNasc = document.getElementById("label_certidao_nasc");
+        
+            if (rgSelect.value === "Sim") {
+              // Mostrar RG campos
+              rgFrente.style.display = "inline";
+              rgVerso.style.display = "inline";
+              labelRgFrente.style.display = "inline";
+              labelRgVerso.style.display = "inline";
+              
+              // Ocultar certidão de nascimento
+              certidaoNasc.style.display = "none";
+              labelCertidaoNasc.style.display = "none";
+            } else {
+              // Ocultar RG campos
+              rgFrente.style.display = "none";
+              rgVerso.style.display = "none";
+              labelRgFrente.style.display = "none";
+              labelRgVerso.style.display = "none";
+        
+              // Mostrar certidão de nascimento
+              certidaoNasc.style.display = "inline";
+              labelCertidaoNasc.style.display = "inline";
+            }
+          }
+
+        document.addEventListener("DOMContentLoaded", function () {
+            const camposMaiusculos = [
+                "nomeCompleto",
+                "nomeCompletoResponsavel",
+                "logradouro",
+                "complemento",
+                "bairro",
+                "cidade",
+                "qual_contraindicacao_ask",
+                "descreva_atv_ask",
+                "descreva_medicamento_ask",
+                "descreva_alergia_ask"
+            ];
+
+            const camposMinusculos = [
+                "email",
+                "confirmarEmail"
+            ];
+
+            function forcarMaiusculas(event) {
+                event.target.value = event.target.value.toUpperCase();
+            }
+
+            function forcarMinusculas(event) {
+                event.target.value = event.target.value.toLowerCase();
+            }
+
+            // Aplica o evento de input para converter os campos para maiúsculas
+            camposMaiusculos.forEach(id => {
+                let campo = document.getElementById(id);
+                if (campo) {
+                    campo.addEventListener("input", forcarMaiusculas);
+                } else {
+                    console.warn(`⚠️ Campo não encontrado: ${id}`);
+                }
+            });
+
+            // Aplica o evento de input para converter o campo email para minúsculas
+            camposMinusculos.forEach(id => {
+                let campo = document.getElementById(id);
+                if (campo) {
+                    campo.addEventListener("input", forcarMinusculas);
+                } else {
+                    console.warn(`⚠️ Campo não encontrado: ${id}`);
+                }
+            });
+        });
+
+        document.addEventListener("DOMContentLoaded", function () {
+            let cpfInput = document.getElementById("cpf");
+            let cpfLabel = document.querySelector("label[for='cpf']"); // Captura o rótulo do CPF
+            let nomeInput = document.getElementById("nomeCompleto");
+
+            if (cpfInput.value.trim() !== "") {
+                // CPF preenchido: Ocultar o campo e buscar o nome
+                cpfInput.setAttribute("readonly", "true");
+                cpfInput.style.display = "none"; // Oculta o campo CPF
+                if (cpfLabel) cpfLabel.style.display = "none"; // Oculta o rótulo do CPF
+                buscarNome();
+            } else {
+                // CPF vazio: Exibir o campo e permitir edição
+                cpfInput.removeAttribute("readonly");
+                cpfInput.style.display = ""; // Remove qualquer ocultação
+                if (cpfLabel) cpfLabel.style.display = ""; // Remove ocultação do rótulo
+            }
+
+            // Se o Nome estiver preenchido, bloquear o campo
+            if (nomeInput.value.trim() !== "") {
+                nomeInput.setAttribute("readonly", "true");
+            }
+        });
+
+        //busca o nome a partir do cpf
+        function buscarNome() {
+            let cpf = document.getElementById("cpf").value.trim();
+            let nomeInput = document.getElementById("nomeCompleto");
+
+            if (cpf.length === 11) {
+                axios.post("https://webhook-n8n-dev-conectarecife.recife.pe.gov.br/webhook/buscar-pessoa", { cpf })
+                    .then(response => {
+                        if (response.data.nome) {
+                            nomeInput.value = response.data.nome;
+                            nomeInput.setAttribute("readonly", "true"); // Bloquear o campo Nome após preenchimento
+                        }
+                    })
+                    .catch(error => {
+                        console.error("Erro ao buscar nome:", error);
+                    });
+            }
+        }
+
+        //idade e faixa etária
+        document.addEventListener("DOMContentLoaded", function () {
+            function calcularIdade() {
+                console.log("▶️ Função calcularIdade() chamada");
+
+                let hoje = new Date();
+                let nascimentoInput = document.getElementById("datanascimento");
+                let idadeInput = document.getElementById("idade");
+                let nascimento = new Date(nascimentoInput.value);
+
+                if (!isNaN(nascimento) && nascimentoInput.value !== "") {
+                    let idade = hoje.getFullYear() - nascimento.getFullYear();
+                    let mes = hoje.getMonth() - nascimento.getMonth();
+                    if (mes < 0 || (mes === 0 && hoje.getDate() < nascimento.getDate())) {
+                        idade--;
+                    }
+                    idadeInput.value = idade;
+
+                    console.log("🔹 Idade calculada:", idade);
+
+                    // Se a idade for menor que 6, interrompe a execução IMEDIATAMENTE
+                    if (!verificarIdadeMinima(idade)) {
+                        return;
+                    }
+
+                    // Se a idade for válida, continua o restante do código normalmente
+                    buscarFaixaetaria();
+                    verificarResponsavel(idade);
+                } else {
+                    idadeInput.value = "";
+                }
+            }
+
+            function verificarIdadeMinima(idade) {
+                console.log("▶️ Função verificarIdadeMinima() chamada com idade:", idade);
+
+                let container = document.querySelector(".container");
+                let progressBar = document.querySelector(".progress"); // Captura a barra de progresso
+                let messageDiv = document.getElementById("message"); // Captura a mensagem
+
+                let dataNascimentoInput = document.getElementById("datanascimento");
+                let idadeInput = document.getElementById("idade");
+                let faixaEtariaInput = document.getElementById("faixaetaria");
+
+                if (idade < 6) {
+                    console.log("⚠️ Idade menor que 6 detectada. Exibindo popup...");
+
+                    let confirmacao = window.confirm(
+                        "A Escola de Frevo do Recife destina-se a alunos com idade mínima completa de 6 anos.\n\n" +
+                        "Clique em 'OK' para fechar o formulário.\n" +
+                        "Clique em 'Cancelar' para limpar a data de nascimento e informar uma nova data."
+                    );
+
+                    if (confirmacao) {
+                        console.log("✅ Usuário clicou em OK - Ocultando formulário e exibindo mensagem na tela...");
+
+                        // Oculta o formulário e a barra de progresso
+                        container.style.display = "none";
+                        progressBar.style.display = "none";
+
+                        // Exibe a mensagem na tela
+                        messageDiv.innerHTML = "A Escola de Frevo do Recife destina-se a alunos com idade mínima completa de 6 anos.";
+                        messageDiv.style.display = "block";
+
+                    } else {
+                        console.log("❌ Usuário clicou em Cancelar - Limpando campos...");
+                        dataNascimentoInput.value = "";
+                        idadeInput.value = "";
+                        faixaEtariaInput.value = "";
+
+                        // Mantém o formulário e a barra de progresso visíveis
+                        container.style.display = "block";
+                        progressBar.style.display = "flex";
+
+                        // Esconde a mensagem da tela
+                        messageDiv.style.display = "none";
+                    }
+
+                    return false; // INTERROMPE QUALQUER OUTRA EXECUÇÃO
+                }
+
+                console.log("✅ Idade permitida, mantendo formulário visível.");
+                container.style.display = "block"; // Exibe o formulário normalmente se a idade for >= 6
+                progressBar.style.display = "flex"; // Garante que a barra de progresso também aparece
+                messageDiv.style.display = "none"; // Esconde a mensagem se o aluno for válido
+                return true; // Permite que o código continue
+            }
+
+            function buscarFaixaetaria() {
+                let idadeInput = document.getElementById("idade").value.trim();
+
+                if (idadeInput !== "") {
+                    console.log("▶️ Função buscarFaixaetaria() chamada com idade:", idadeInput);
+
+                    axios.post("https://webhook-n8n-dev-conectarecife.recife.pe.gov.br/webhook/modalidade", { idade: idadeInput })
+                        .then(response => {
+                            console.log("🟢 Resposta recebida do webhook:", response.data);
+
+                            if (Array.isArray(response.data) && response.data.length > 0) {
+                                let resultado = response.data[0];
+
+                                if (resultado.faixa_etaria) {
+                                    document.getElementById("faixaetaria").value = resultado.faixa_etaria;
+                                    console.log("✅ Campo Faixa Etária atualizado:", resultado.faixa_etaria);
+                                }
+
+                                if (resultado.modalidade) {
+                                    document.getElementById("modalidade").value = resultado.modalidade;
+                                    console.log("✅ Campo Modalidade atualizado:", resultado.modalidade);
+                                }
+                            } else {
+                                console.warn("⚠️ Resposta inesperada do webhook:", response.data);
+                            }
+                        })
+                        .catch(error => {
+                            console.error("⛔ Erro ao consultar faixa etária e modalidade:", error);
+                        });
+                } else {
+                    console.warn("⚠️ Nenhuma idade informada. A consulta não foi realizada.");
+                }
+            }
+
+            function verificarResponsavel(idade) {
+                console.log("▶️ Função verificarResponsavel() chamada com idade:", idade);
+
+                const cpfResponsavelLabel = document.querySelector("label[for='cpfresponsavel']");
+                const cpfResponsavel = document.getElementById("cpfresponsavel");
+                const nomeResponsavelLabel = document.querySelector("label[for='nomeresponsavel']");
+                const nomeResponsavel = document.getElementById("nomeCompletoResponsavel");
+
+                if (idade < 18) {
+                    console.log("🔹 Idade menor que 18 - Exibindo campos do responsável.");
+                    cpfResponsavelLabel.style.display = "block";
+                    cpfResponsavel.style.display = "block";
+                    cpfResponsavel.setAttribute("required", "required");
+
+                    nomeResponsavelLabel.style.display = "block";
+                    nomeResponsavel.style.display = "block";
+                    nomeResponsavel.setAttribute("required", "required");
+                } else {
+                    console.log("🔹 Idade maior ou igual a 18 - Ocultando campos do responsável.");
+                    cpfResponsavelLabel.style.display = "none";
+                    cpfResponsavel.style.display = "none";
+                    cpfResponsavel.removeAttribute("required");
+                    cpfResponsavel.value = ""; // Limpa o campo ao ocultá-lo
+
+                    nomeResponsavelLabel.style.display = "none";
+                    nomeResponsavel.style.display = "none";
+                    nomeResponsavel.removeAttribute("required");
+                    nomeResponsavel.value = ""; // Limpa o campo ao ocultá-lo
+                }
+            }
+
+            // ⬇️ EXECUTA SOMENTE APÓS O USUÁRIO SAIR DO CAMPO (BLUR)
+            document.getElementById("datanascimento").addEventListener("blur", calcularIdade);
+
+            document.getElementById("cpfresponsavel").addEventListener("input", function () {
+                this.value = this.value.replace(/\D/g, ""); // Remove caracteres não numéricos
+                if (this.value.length > 11) {
+                    this.value = this.value.slice(0, 11); // Limita a 11 dígitos
+                }
+            });
+
+            document.getElementById("cpfresponsavel").addEventListener("blur", function () {
+                if (this.value !== "" && this.value.length !== 11) { // Permite o campo vazio
+                    alert("O CPF deve conter exatamente 11 dígitos numéricos.");
+
+                    // Aguarda o usuário fechar o alerta antes de limpar o campo e restaurar o foco
+                    setTimeout(() => {
+                        this.value = "";
+                        this.focus();
+                    }, 100);
+                }
+            });
+
+        });
+
+        //Buscar nome do responsável
+        function buscarNomeResponsavel() {
+            let cpfResponsavel = document.getElementById("cpfresponsavel").value.trim();
+            let nomeResponsavelInput = document.getElementById("nomeCompletoResponsavel");
+
+            if (cpfResponsavel.length === 11) {
+                axios.post("https://webhook-n8n-dev-conectarecife.recife.pe.gov.br/webhook/buscar-pessoa", { cpf: cpfResponsavel })
+                    .then(response => {
+                        if (response.data.nome) {
+                            nomeResponsavelInput.value = response.data.nome;
+                            nomeResponsavelInput.setAttribute("readonly", "true"); // Bloquear o campo Nome após preenchimento
+                        }
+                    })
+                    .catch(error => {
+                        console.error("Erro ao buscar nome do responsável:", error);
+                    });
+            }
+        }
+
+        //Preencher endereço
+        function buscarEndereco() {
+            let cep = document.getElementById("cep").value.trim();
+
+            if (cep.length === 8) { // Garantir que o CEP tem 8 dígitos
+                // Chama a API ViaCEP
+                axios.get(`https://viacep.com.br/ws/${cep}/json/`)
+                    .then(response => {
+                        let data = response.data;
+
+                        // Verifica se a API retornou um erro
+                        if (!data.erro) {
+                            // Preenche os campos de endereço com os dados retornados
+                            document.getElementById("logradouro").value = data.logradouro || "";
+                            document.getElementById("bairro").value = data.bairro || "";
+                            document.getElementById("cidade").value = data.localidade || "";
+                            document.getElementById("complemento").value = data.complemento || "";
+
+                            console.log("Endereço preenchido com sucesso!");
+
+                        } else {
+                            alert("CEP inválido. Verifique e tente novamente.");
+                            console.error("Erro ao buscar o endereço, CEP não encontrado.");
+                        }
+                    })
+                    .catch(error => {
+                        console.error("Erro ao buscar endereço:", error);
+                    });
+            } else {
+                alert("Por favor, insira um CEP válido com 8 dígitos.");
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", function () {
+            // 📧 Validação e confirmação do e-mail
+            let emailInput = document.getElementById("email");
+            let confirmarEmailInput = document.getElementById("confirmarEmail");
+
+            emailInput.addEventListener("blur", function () {
+                this.value = this.value.trim().toLowerCase(); // Converte para minúsculas
+
+                let emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (this.value !== "" && !emailRegex.test(this.value)) {
+                    alert("E-mail inválido! Digite um endereço válido.");
+                    this.value = "";
+                }
+            });
+
+            confirmarEmailInput.addEventListener("blur", function () {
+                if (this.value.trim() !== "" && this.value.trim().toLowerCase() !== emailInput.value.trim().toLowerCase()) {
+                    alert("Os e-mails digitados não coincidem. Verifique e corrija.");
+                    setTimeout(() => confirmarEmailInput.focus(), 100); // Retorna o foco após o alerta
+                    this.value = ""; // Limpa o campo de confirmação
+                }
+            });
+
+            // 📱 Validação e confirmação do WhatsApp
+            let whatsappInput = document.getElementById("whatsapp");
+            let confirmarWhatsAppInput = document.getElementById("confirmarWhatsApp");
+
+            function validarNumero(input) {
+                input.value = input.value.replace(/\D/g, ""); // Remove tudo que não for número
+                if (input.value.length > 11) {
+                    input.value = input.value.slice(0, 11); // Limita a 11 dígitos
+                }
+            }
+
+            whatsappInput.addEventListener("input", function () {
+                validarNumero(this);
+            });
+
+            whatsappInput.addEventListener("blur", function () {
+                if (this.value.trim() !== "" && this.value.length !== 11) {
+                    alert("O WhatsApp deve conter exatamente 11 dígitos numéricos.");
+                    this.value = "";
+                }
+            });
+
+            confirmarWhatsAppInput.addEventListener("input", function () {
+                validarNumero(this);
+            });
+
+            confirmarWhatsAppInput.addEventListener("blur", function () {
+                if (this.value.trim() !== "" && this.value !== whatsappInput.value) {
+                    alert("Os números de WhatsApp digitados não coincidem. Verifique e corrija.");
+                    setTimeout(() => confirmarWhatsAppInput.focus(), 100); // Retorna o foco após o alerta
+                    this.value = ""; // Limpa o campo de confirmação
+                }
+            });
+        });
+
+        //verificar se tipo de matrícula é inválido
+        function verificarTipoMatricula() {
+            let tipoMatriculaInput = document.getElementById("tipoMatricula");
+
+            if (!tipoMatriculaInput) {
+                console.error("O campo 'tipoMatricula' não foi encontrado no DOM.");
+                return "";
+            }
+
+            let tipoMatriculaValue = tipoMatriculaInput.value.trim();
+
+            if (!tipoMatriculaValue || tipoMatriculaValue === "{{ $json.query.tipo_matricula }}") {
+                console.warn("Tipo de Matrícula inválido ou não carregado, assumindo 'Matrícula nova'.");
+                tipoMatriculaInput.value = "Matrícula nova"; // Define um valor padrão caso esteja vazio
+            }
+
+            return tipoMatriculaInput.value.trim();
+        }
+
+        //Define os niveis a partir do tipo de matrícula
+        document.addEventListener("DOMContentLoaded", function () {
+            setTimeout(() => {
+                let tipoMatriculaInput = document.getElementById("tipoMatricula");
+                let nivelSelect = document.getElementById("nivel");
+                let proximoNivelInput = document.getElementById("proximonivel");
+
+                if (!tipoMatriculaInput || !nivelSelect || !proximoNivelInput) {
+                    console.error("❌ Um dos elementos não foi encontrado no DOM.");
+                    return;
+                }
+
+                let tipoMatriculaValue = tipoMatriculaInput.value ? tipoMatriculaInput.value.trim() : "Matrícula nova";
+                let proximoNivelValue = proximoNivelInput.value.trim();
+
+                // Se `tipoMatricula` estiver indefinido ou vazio, definir como "Matrícula nova" e limpar `proximoNivel`
+                if (!tipoMatriculaInput.value || tipoMatriculaInput.value.trim() === "undefined") {
+                    console.warn("⚠️ tipoMatricula estava indefinido. Definindo como 'Matrícula nova'.");
+                    tipoMatriculaInput.value = "Matrícula nova";
+                    proximoNivelInput.value = ""; // Limpa o campo proximoNivel
+                }
+
+                console.log("🔹 Tipo de Matrícula carregado:", tipoMatriculaInput.value);
+                console.log("🔹 Próximo Nível carregado:", proximoNivelInput.value);
+
+                atualizarNiveis(tipoMatriculaInput.value, proximoNivelInput.value);
+            }, 300); // Pequeno delay para garantir que os valores foram carregados
+        });
+
+        // Função para atualizar as opções do select nível com base no tipo de matrícula
+        function atualizarNiveis(tipoMatricula, proximoNivel) {
+            let nivelSelect = document.getElementById("nivel");
+
+            if (!nivelSelect) {
+                console.error("❌ O campo 'nivel' não foi encontrado no DOM.");
+                return;
+            }
+
+            nivelSelect.innerHTML = ""; // Limpa as opções
+
+            if (tipoMatricula === "Matrícula nova") {
+                console.log("📌 Configurando níveis para 'Matrícula nova'");
+                nivelSelect.innerHTML = `
+                    <option value="">Selecione o nível</option>
+                    <option value="Livre">Livre</option>
+                    <option value="Iniciante">Iniciante</option>
+                `;
+                nivelSelect.disabled = false; // Mantém editável
+            } else if (tipoMatricula === "Renovação" && proximoNivel) {
+                console.log("📌 Configurando nível único para 'Renovação':", proximoNivel);
+                nivelSelect.innerHTML = `<option value="${proximoNivel}" selected>${proximoNivel}</option>`;
+                nivelSelect.disabled = true; // Bloqueia edição
+            }
+        }
+
+        // 🔹 Buscar turmas
+        function buscarTurmas() {
+            let faixaEtariaInput = document.getElementById("faixaetaria");
+            let nivelSelect = document.getElementById("nivel");
+            let proximoNivelInput = document.getElementById("proximonivel");
+            let tipoMatriculaInput = document.getElementById("tipoMatricula");
+
+            if (!faixaEtariaInput || !nivelSelect || !proximoNivelInput || !tipoMatriculaInput) {
+                console.error("❌ Um ou mais elementos não foram encontrados no DOM.");
+                return;
+            }
+
+            let faixaEtaria = faixaEtariaInput.value.trim();
+            let tipoMatricula = tipoMatriculaInput.value.trim();
+            let nivel = "";
+
+            // 🔹 Define o nível corretamente para o webhook
+            if (tipoMatricula === "Matrícula nova") {
+                nivel = nivelSelect.options[nivelSelect.selectedIndex].text; // Obtém o TEXTO visível do option
+            } else if (tipoMatricula === "Renovação" && proximoNivelInput.value.trim()) {
+                nivel = proximoNivelInput.value.trim();
+            }
+
+            console.log("🔹 Chamando Webhook para buscar turmas...");
+            console.log("Faixa Etária:", faixaEtaria || "Valor não encontrado!");
+            console.log("Nível enviado:", nivel || "Valor não encontrado!");
+            console.log("Tipo de Matrícula:", tipoMatricula || "Valor não encontrado!");
+
+            if (!faixaEtaria || !nivel) {
+                console.warn("⚠️ Faixa etária ou nível está vazio. A consulta não será realizada.");
+                return;
+            }
+
+            axios.post("https://webhook-n8n-dev-conectarecife.recife.pe.gov.br/webhook/turmas-frevo-consulta", {
+                faixa_etaria: faixaEtaria,
+                nivel: nivel, // Enviando o TEXTO visível
+                tipo_de_matricula: tipoMatricula
+            })
+                .then(response => {
+                    console.log("🟢 Resposta do Webhook:", response.data);
+
+                    let selectTurma = document.getElementById("turma");
+                    selectTurma.innerHTML = '<option value="">Selecione a turma</option>'; // Limpa as opções
+
+                    if (Array.isArray(response.data) && response.data.length > 0) {
+                        turmasData = response.data; // Armazena os dados das turmas
+                        turmasData.forEach(item => {
+                            let option = document.createElement("option");
+                            option.value = item.turma;
+                            option.textContent = `${item.turma} - ${item.dias} (${item.horario}) - ${item.local} - Prof. ${item.professor}`;
+                            selectTurma.appendChild(option);
+                        });
+                    } else {
+                        console.warn("⚠️ Nenhuma turma encontrada.");
+                    }
+                })
+                .catch(error => {
+                    console.error("⛔ Erro ao buscar turmas:", error);
+                });
+        }
+
+        // 🔵 Atualizar a lista de níveis sempre que o `tipoMatricula` mudar
+        document.getElementById("tipoMatricula").addEventListener("change", function () {
+            let tipoMatricula = this.value.trim();
+            let proximoNivel = document.getElementById("proximonivel").value.trim();
+
+            // Se for "Matrícula nova", limpar `proximoNivel`
+            if (tipoMatricula === "Matrícula nova") {
+                document.getElementById("proximonivel").value = "";
+            }
+
+            atualizarNiveis(tipoMatricula, proximoNivel);
+        });
+
+        // 🔹 Chamar `buscarTurmas` quando nível ou data de nascimento mudarem
+        document.getElementById("datanascimento").addEventListener("blur", function () {
+            buscarTurmas();
+        });
+
+        document.getElementById("nivel").addEventListener("change", function () {
+            limparCamposTurma(); // Limpa os campos da turma sempre que o nível for alterado
+            buscarTurmas();
+        });
+
+        // 🔹 Função para limpar os campos da turma ao alterar o nível
+        function limparCamposTurma() {
+            console.log("🧹 Limpando campos de turma...");
+            document.getElementById("turma").innerHTML = '<option value="">Selecione a turma</option>';
+            document.getElementById("dias").value = "";
+            document.getElementById("horario").value = "";
+            document.getElementById("local").value = "";
+            document.getElementById("professor").value = "";
+        }
+
+        // 🔹 Preencher detalhes da turma ao selecionar uma opção
+        function preencherDetalhesTurma() {
+            let turmaSelecionada = document.getElementById("turma").value;
+            let turmaInfo = turmasData.find(turma => turma.turma === turmaSelecionada);
+
+            if (turmaInfo) {
+                document.getElementById("dias").value = turmaInfo.dias;
+                document.getElementById("horario").value = turmaInfo.horario;
+                document.getElementById("local").value = turmaInfo.local;
+                document.getElementById("professor").value = turmaInfo.professor;
+            } else {
+                limparCamposTurma();
+            }
+        }
+
+        document.getElementById("turma").addEventListener("change", preencherDetalhesTurma);
+
+
+        document.addEventListener("DOMContentLoaded", function () {
+            let nivel = document.getElementById("nivel").value.trim();
+            console.log("Nível ao carregar:", nivel);
+
+            if (nivel) {
+                document.getElementById("datanascimento").addEventListener("blur", buscarTurmas);
+            }
+        });
+
+        //Transporta dados do responsável caso maior de idade e deficiente intelectual
+        document.addEventListener("DOMContentLoaded", function () {
+            const tipoDeficiencia = document.getElementById("tipo_def_ask");
+            const pcdAsk = document.getElementById("pcd_ask");
+            const dadosPessoais = document.getElementById("dados-pessoais");
+            const dadosSaude = document.getElementById("dados-saude");
+
+            const cpfResponsavelLabel = document.querySelector("label[for='cpfresponsavel']");
+            const cpfResponsavel = document.getElementById("cpfresponsavel");
+            const nomeResponsavelLabel = document.querySelector("label[for='nomeresponsavel']");
+            const nomeResponsavel = document.getElementById("nomeCompletoResponsavel");
+
+            function verificarMovimentacaoCampos() {
+                let idade = parseInt(document.getElementById("idade").value) || 0;
+
+                if (idade < 18) {
+                    // Se idade < 18, mantém os campos em "Dados Pessoais"
+                    if (!dadosPessoais.contains(cpfResponsavel)) {
+                        dadosPessoais.appendChild(cpfResponsavelLabel);
+                        dadosPessoais.appendChild(cpfResponsavel);
+                        dadosPessoais.appendChild(nomeResponsavelLabel);
+                        dadosPessoais.appendChild(nomeResponsavel);
+                    }
+                    cpfResponsavelLabel.style.display = "block";
+                    cpfResponsavel.style.display = "block";
+                    cpfResponsavel.setAttribute("required", "required");
+
+                    nomeResponsavelLabel.style.display = "block";
+                    nomeResponsavel.style.display = "block";
+                    nomeResponsavel.setAttribute("required", "required");
+                } else {
+                    // Se idade >= 18 e "intelectual" for selecionado, move para "Dados de Saúde"
+                    if (tipoDeficiencia.value === "intelectual" && pcdAsk.value === "sim") {
+                        if (!dadosSaude.contains(cpfResponsavel)) {
+                            dadosSaude.appendChild(cpfResponsavelLabel);
+                            dadosSaude.appendChild(cpfResponsavel);
+                            dadosSaude.appendChild(nomeResponsavelLabel);
+                            dadosSaude.appendChild(nomeResponsavel);
+                        }
+                        cpfResponsavelLabel.style.display = "block";
+                        cpfResponsavel.style.display = "block";
+                        cpfResponsavel.setAttribute("required", "required");
+
+                        nomeResponsavelLabel.style.display = "block";
+                        nomeResponsavel.style.display = "block";
+                        nomeResponsavel.setAttribute("required", "required");
+                    } else {
+                        // Se outra deficiência for selecionada ou "PCD" for "Não", oculta os campos
+                        ocultarCamposResponsavel();
+                    }
+                }
+            }
+
+            function ocultarCamposResponsavel() {
+                cpfResponsavelLabel.style.display = "none";
+                cpfResponsavel.style.display = "none";
+                cpfResponsavel.removeAttribute("required");
+                cpfResponsavel.value = "";
+
+                nomeResponsavelLabel.style.display = "none";
+                nomeResponsavel.style.display = "none";
+                nomeResponsavel.removeAttribute("required");
+                nomeResponsavel.value = "";
+            }
+
+            // Verifica mudanças no select "PCD"
+            pcdAsk.addEventListener("change", function () {
+                if (pcdAsk.value === "nao") {
+                    ocultarCamposResponsavel();
+                } else {
+                    verificarMovimentacaoCampos();
+                }
+            });
+
+            // Chama a função ao mudar o tipo de deficiência
+            tipoDeficiencia.addEventListener("change", verificarMovimentacaoCampos);
+
+            // Chama a função ao sair do campo Data de Nascimento
+            document.getElementById("datanascimento").addEventListener("change", function () {
+                setTimeout(verificarMovimentacaoCampos, 100);
+            });
+        });
+
+        // Disparar a busca ao sair (`blur`) ou mudar (`change`) o campo nível
+        document.getElementById("nivel").addEventListener("blur", function () {
+            if (this.value.trim()) {
+                buscarTurmas();
+            }
+        });
+
+        document.getElementById("nivel").addEventListener("change", function () {
+            if (this.value.trim()) {
+                buscarTurmas();
+            }
+        });
+
+        // Atualiza os detalhes da turma quando a seleção muda
+        document.getElementById("turma").addEventListener("change", preencherDetalhesTurma);
+
+        //Deficiência
+        document.addEventListener("DOMContentLoaded", function () {
+            const pcdAsk = document.getElementById("pcd_ask");
+            const tipoPcdLabel = document.querySelector("label[for='tipodeficiencia']");
+            const tipoPcdAsk = document.getElementById("tipo_def_ask");
+            const qualDefLabel = document.querySelector("label[for='qualdeficiencia']");
+            const qualDeficienciaAsk = document.getElementById("qual_deficiencia_ask");
+
+            const deficiencias = {
+                "auditiva": [
+                    "",
+                    "Deficiência auditiva",
+                    "Perda auditiva de grau leve a severo",
+                    "Surdez bilateral, profunda",
+                    "Surdez unilateral",
+                    "Outras deficiências auditivas"
+                ],
+                "visao": [
+                    "",
+                    "Baixa visão",
+                    "Cegueira total",
+                    "Visão monocular",
+                    "Outras deficiências visuais"
+                ],
+                "fisica_motora": [
+                    "",
+                    "Amputação ou ausência de membro",
+                    "Hemiplegia",
+                    "Nanismo",
+                    "Ostomia",
+                    "Paralisia cerebral",
+                    "Paraparesia",
+                    "Paraplegia",
+                    "Tetraparesia",
+                    "Tetraplegia",
+                    "Outras deficiências físicas"
+                ],
+                "intelectual": [
+                    "",
+                    "Depressão grave ou persistente",
+                    "Esquizofrenia",
+                    "Síndrome de Down",
+                    "Transtorno bipolar",
+                    "Transtornos de personalidade",
+                    "Transtorno do espectro do autismo",
+                    "Outras deficiências intelectuais"
+                ]
+            };
+
+            // Função para exibir/ocultar campos e definir obrigatoriedade
+            function toggleField(select, label, field) {
+                if (select.value === "sim") {
+                    label.style.display = "block";
+                    field.style.display = "block";
+                    field.setAttribute("required", "required");
+                } else {
+                    label.style.display = "none";
+                    field.style.display = "none";
+                    field.removeAttribute("required");
+                    field.value = ""; // Limpa o campo ao ocultá-lo
+                }
+            }
+
+            // Inicialmente esconde os labels e selects
+            tipoPcdLabel.style.display = "none";
+            tipoPcdAsk.style.display = "none";
+            qualDefLabel.style.display = "none";
+            qualDeficienciaAsk.style.display = "none";
+            tipoPcdAsk.removeAttribute("required");
+            qualDeficienciaAsk.removeAttribute("required");
+
+            // Evento para mostrar/esconder o tipo de deficiência
+            pcdAsk.addEventListener("change", function () {
+                toggleField(pcdAsk, tipoPcdLabel, tipoPcdAsk);
+                // Se "não", também esconde e reseta o próximo campo
+                if (this.value !== "sim") {
+                    qualDefLabel.style.display = "none";
+                    qualDeficienciaAsk.style.display = "none";
+                    qualDeficienciaAsk.innerHTML = "";
+                    qualDeficienciaAsk.removeAttribute("required");
+                }
+            });
+
+            // Evento para mostrar/esconder a lista de deficiências específicas
+            tipoPcdAsk.addEventListener("change", function () {
+                qualDeficienciaAsk.innerHTML = "";
+                if (this.value !== "selecione") {
+                    qualDefLabel.style.display = "block";
+                    qualDeficienciaAsk.style.display = "block";
+                    qualDeficienciaAsk.setAttribute("required", "required");
+
+                    let options = deficiencias[this.value];
+                    options.forEach(option => {
+                        let opt = document.createElement("option");
+                        opt.value = option.toLowerCase().replace(/\s+/g, "_");
+                        opt.textContent = option;
+                        qualDeficienciaAsk.appendChild(opt);
+                    });
+                } else {
+                    qualDefLabel.style.display = "none";
+                    qualDeficienciaAsk.style.display = "none";
+                    qualDeficienciaAsk.removeAttribute("required");
+                    qualDeficienciaAsk.innerHTML = ""; // Limpa opções ao esconder
+                }
+            });
+        });
+
+        document.addEventListener("DOMContentLoaded", function () {
+            function toggleField(selectId, labelId, inputId) {
+                const select = document.getElementById(selectId);
+                const label = document.querySelector(`label[for='${labelId}']`);
+                const input = document.getElementById(inputId);
+
+                label.style.display = "none";
+                input.style.display = "none";
+                input.removeAttribute("required"); // Remove required inicialmente
+
+                select.addEventListener("change", function () {
+                    if (this.value === "sim") {
+                        label.style.display = "block";
+                        input.style.display = "block";
+                        input.setAttribute("required", "required"); // Torna obrigatório
+                    } else {
+                        label.style.display = "none";
+                        input.style.display = "none";
+                        input.removeAttribute("required"); // Remove obrigatoriedade
+                        input.value = ""; // Limpa o campo ao ocultá-lo
+                    }
+                });
+            }
+
+            toggleField("contraindicacao_medica_ask", "qual_contraindicacao_ask", "qual_contraindicacao_ask");
+            toggleField("realiza_atv_ask", "descreva_atv_ask", "descreva_atv_ask");
+            toggleField("usa_mediamento_ask", "descreva_medicamento_ask", "descreva_medicamento_ask");
+            toggleField("alergia_ask", "descreva_alergia_ask", "descreva_alergia_ask");
+        });
+
+        function convertToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result.split(',')[1]); // Remove o prefixo "data:*/*;base64,"
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        document.addEventListener("DOMContentLoaded", function () {
+            const submitButton = document.getElementById("submitButton");
+        
+            if (submitButton) {
+                submitButton.addEventListener("click", function (event) {
+                    console.log("Botão de enviar clicado");
+        
+                    let form = document.getElementById("userForm");
+        
+                    if (form) {
+                        // Evita o envio padrão do formulário
+                        event.preventDefault();
+        
+                        // Construir o objeto de dados manualmente
+                        let jsonData = {};
+        
+                        // Itera sobre todos os campos do formulário e coleta seus valores
+                        let fields = form.querySelectorAll("input, select, textarea");
+                        fields.forEach(field => {
+                            // Verifica se o campo tem valor e está habilitado
+                            if (field.name && field.value !== undefined) {
+                                // Se o campo for readonly ou com display: none, ainda será enviado se tiver valor
+                                jsonData[field.name] = field.value;
+                            }
+                        });
+        
+                        // Verifica se há campos de tipo 'file' no formulário
+                        let fileInputs = form.querySelectorAll("input[type='file']");
+                        let filePromises = [];
+        
+                        fileInputs.forEach(fileInput => {
+                            if (fileInput.files.length > 0) {
+                                let file = fileInput.files[0];
+        
+                                // Adiciona a promessa de conversão para base64
+                                filePromises.push(
+                                    convertToBase64(file).then(base64File => {
+                                        // Extrai a extensão do arquivo
+                                        let fileExtension = file.name.split('.').pop();
+        
+                                        // Adiciona o arquivo convertido e a extensão ao JSON
+                                        jsonData[`${fileInput.name}_base64`] = base64File; // Arquivo em base64
+                                        jsonData[`${fileInput.name}_ext`] = fileExtension; // Extensão do arquivo
+                                        console.log(`${fileInput.name} convertido para base64:`, base64File);
+                                        console.log(`${fileInput.name} extensão:`, fileExtension);
+                                    })
+                                );
+                            }
+                        });
+        
+                        // Espera todas as promessas de arquivos terminarem
+                        Promise.all(filePromises).then(() => {
+                            // Envio via Axios
+                            axios.post("https://webhook-n8n-dev-conectarecife.recife.pe.gov.br/webhook/efr", jsonData, {
+                                headers: { "Content-Type": "application/json" }
+                            })
+                            .then(response => {
+                                console.log("Resposta do servidor:", response.data);
+                                alert("Formulário enviado com sucesso! Aguarde confirmação.");
+                                form.reset();
+                            })
+                            .catch(error => {
+                                console.error("Erro ao enviar o formulário:", error.response || error.message);
+                                alert(error.message);
+                            });
+                        }).catch(error => {
+                            console.error("Erro ao converter o arquivo para base64:", error);
+                            alert("Erro ao processar o arquivo. Tente novamente.");
+                        });
+                    } else {
+                        console.error("Formulário não encontrado!");
+                    }
+                });
+            }
+        });
+        
+    </script>
+
+</body>
+
+</html>

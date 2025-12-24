@@ -1370,6 +1370,7 @@
 
             // ⬇️ EXECUTA SOMENTE APÓS O USUÁRIO SAIR DO CAMPO (BLUR)
             document.getElementById("datanascimento").addEventListener("blur", calcularIdade);
+            document.getElementById("datanascimento").addEventListener("change", calcularIdade);
 
             document.getElementById("cpfresponsavel").addEventListener("input", function () {
                 this.value = this.value.replace(/\D/g, ""); // Remove caracteres não numéricos
@@ -1705,13 +1706,30 @@
                 const nomeResponsavel = document.getElementById("nomeCompletoResponsavel");
                 const sectionResponsavel = document.getElementById("dados-responsavel");
                 const idadeField = document.getElementById("idade");
+                const dataNascimentoField = document.getElementById("datanascimento");
 
                 if (!sectionResponsavel || !idadeField) {
                     console.warn("Elementos da seção do responsável não encontrados.");
                     return;
                 }
 
-                let idade = parseInt(idadeField.value) || 0;
+                let idade = parseInt(idadeField.value, 10) || 0;
+
+                // Calcula a idade a partir da data de nascimento caso o campo idade ainda não tenha sido preenchido
+                if ((!idade || idade <= 0) && dataNascimentoField && dataNascimentoField.value) {
+                    const hoje = new Date();
+                    const nascimento = new Date(dataNascimentoField.value);
+                    if (!isNaN(nascimento)) {
+                        idade = hoje.getFullYear() - nascimento.getFullYear();
+                        const mes = hoje.getMonth() - nascimento.getMonth();
+                        if (mes < 0 || (mes === 0 && hoje.getDate() < nascimento.getDate())) {
+                            idade--;
+                        }
+                        // Mantém o campo idade sincronizado para evitar discrepâncias em chamadas futuras
+                        idadeField.value = idade;
+                    }
+                }
+
                 let isMenor = (idade > 0 && idade < 18);
                 let isIntelectual = (tipoDeficiencia && tipoDeficiencia.value.toLowerCase() === "intelectual");
 

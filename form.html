@@ -1369,8 +1369,18 @@
             }
 
             // ⬇️ EXECUTA SOMENTE APÓS O USUÁRIO SAIR DO CAMPO (BLUR)
-            document.getElementById("datanascimento").addEventListener("blur", calcularIdade);
-            document.getElementById("datanascimento").addEventListener("change", calcularIdade);
+            const dataNascimentoField = document.getElementById("datanascimento");
+            if (dataNascimentoField) {
+                const handleNascimentoChange = () => {
+                    calcularIdade();
+                    if (typeof window.verificarNecessidadeResponsavel === "function") {
+                        window.verificarNecessidadeResponsavel();
+                    }
+                };
+
+                dataNascimentoField.addEventListener("blur", handleNascimentoChange);
+                dataNascimentoField.addEventListener("change", handleNascimentoChange);
+            }
 
             document.getElementById("cpfresponsavel").addEventListener("input", function () {
                 this.value = this.value.replace(/\D/g, ""); // Remove caracteres não numéricos

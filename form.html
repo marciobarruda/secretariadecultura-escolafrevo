@@ -1763,6 +1763,17 @@
       }
 
       function applyPrefillFromJson() {
+        const fallbackPattern = /^\s*\{\{\s*\$json\.[^}]+\}\}\s*$/;
+        const sanitizeTemplateValue = (value) => {
+          if (value === undefined || value === null) return "";
+          const str = String(value).trim();
+          if (!str || fallbackPattern.test(str)) return "";
+          return str;
+        };
+        const dispatchPrefillEvents = (element) => {
+          ["input", "change"].forEach((type) => element.dispatchEvent(new Event(type, { bubbles: true })));
+        };
+
         const source =
           typeof $json !== "undefined"
             ? Array.isArray($json)
@@ -1775,12 +1786,13 @@
         fieldRegistry.forEach((entry) => {
           const key = entry.config.name || entry.config.id;
           if (!key || !(key in source)) return;
-          const value = source[key];
+          const value = sanitizeTemplateValue(source[key]);
           if (value === undefined || value === null) return;
           if (entry.input instanceof HTMLInputElement || entry.input instanceof HTMLSelectElement || entry.input instanceof HTMLTextAreaElement) {
             entry.input.value = value;
             if (entry.input.dataset.digitsOnly === "true") sanitizeDigitsInput(entry.input);
             if (entry.input.dataset.numero === "true") sanitizeNumeroInput(entry.input);
+            dispatchPrefillEvents(entry.input);
           }
         });
         computeAge();

@@ -604,18 +604,15 @@
           <div class="col-xl-10">
             <div class="card card-programa">
               <div class="card-header">
-                <div class="d-flex align-items-start justify-content-between flex-wrap gap-2">
-                  <div>
+                <div class="d-flex align-items-start justify-content-between flex-wrap gap-3">
+                  <div class="flex-grow-1">
                     <div class="card-tag">Matrícula</div>
                     <h2 class="card-title mb-1">Escola de Frevo do Recife</h2>
                     <p class="card-subtitle mb-0">
                       Insira seus dados pessoais, endereço, informações de saúde e anexe a documentação solicitada.
                     </p>
                   </div>
-                  <div class="modal-meta">
-                    <span class="modal-meta-label">Status</span>
-                    <span class="modal-meta-value">Em preenchimento</span>
-                  </div>
+                  <div id="tipo-matricula-slot" class="d-flex align-items-start justify-content-end"></div>
                 </div>
               </div>
               <div class="card-body">
@@ -1582,12 +1579,197 @@
       const formElement = document.getElementById("matricula-form");
       const sectionsContainer = document.getElementById("form-sections");
       const fieldRegistry = new Map();
+      const statusSlot = document.getElementById("tipo-matricula-slot");
+      let cepLoadingIndicator = null;
+      let lastCepSearched = "";
 
       const transforms = {
         digitsOnly: (value) => value.replace(/\\D+/g, ""),
         upperCase: (value) => value.toUpperCase(),
         lowerCase: (value) => value.toLowerCase()
       };
+
+      const digitOnlyFields = new Set(["cpf", "cpfresponsavel", "cep", "whatsapp", "confirmarWhatsApp"]);
+
+      function sanitizeDigitsInput(input) {
+        const cursor = input.selectionStart;
+        const clean = transforms.digitsOnly(input.value);
+        if (input.value !== clean) {
+          input.value = clean;
+          if (cursor !== null) {
+            const nextPos = Math.min(clean.length, Math.max(0, cursor - (input.value.length - clean.length)));
+            input.setSelectionRange(nextPos, nextPos);
+          }
+        }
+      }
+
+      function sanitizeNumeroInput(input) {
+        const raw = input.value.trim();
+        if (!raw) {
+          input.setCustomValidity("");
+          return;
+        }
+        const upper = raw.toUpperCase();
+        if (upper === "SN") {
+          input.value = "SN";
+          input.setCustomValidity("");
+          return;
+        }
+        const digits = transforms.digitsOnly(raw);
+        input.value = digits;
+        if (!digits) {
+          input.setCustomValidity('Use apenas dígitos ou "SN".');
+        } else {
+          input.setCustomValidity("");
+        }
+      }
+
+      function setLoadingCep(isLoading) {
+        const cepEntry = fieldRegistry.get("cep");
+        if (!cepEntry) return;
+        const wrapper = cepEntry.wrapper;
+        if (isLoading) {
+          if (!cepLoadingIndicator) {
+            cepLoadingIndicator = document.createElement("div");
+            cepLoadingIndicator.className = "spinner-border spinner-border-sm text-primary ms-2";
+            cepLoadingIndicator.setAttribute("role", "status");
+            cepLoadingIndicator.setAttribute("aria-label", "Carregando CEP");
+          }
+          if (!wrapper.querySelector(".spinner-border")) {
+            const group = wrapper.querySelector(".input-group");
+            if (group) group.appendChild(cepLoadingIndicator);
+          }
+        } else if (cepLoadingIndicator?.parentElement) {
+          cepLoadingIndicator.remove();
+        }
+      }
+
+      function setCepMessage(message, type = "muted") {
+        const feedback = document.getElementById("cep-feedback");
+        if (!feedback) return;
+        feedback.textContent = message;
+        feedback.className = `form-text text-${type}`;
+      }
+
+      async function fetchCepBrasilApi(cep) {
+        if (!cep || cep.length !== 8 || cep === lastCepSearched) return;
+        lastCepSearched = cep;
+        setLoadingCep(true);
+        setCepMessage("Consultando CEP...", "primary");
+        try {
+          const response = await fetch(`https://brasilapi.com.br/api/cep/v1/${cep}`);
+          if (!response.ok) throw new Error("CEP não encontrado");
+          const data = await response.json();
+          const mapping = {
+            logradouro: data.street,
+            bairro: data.neighborhood,
+            cidade: data.city,
+            complemento: data.complement,
+            cep: data.cep?.replace(/\D+/g, "")
+          };
+          Object.entries(mapping).forEach(([fieldId, value]) => {
+            if (!value) return;
+            const entry = fieldRegistry.get(fieldId);
+            if (entry?.input && entry.wrapper.style.display !== "none") {
+              entry.input.value = value;
+            }
+          });
+          setCepMessage("Endereço preenchido automaticamente. Confira os dados.", "success");
+        } catch (error) {
+          setCepMessage("CEP não encontrado. Você pode preencher manualmente.", "danger");
+        } finally {
+          setLoadingCep(false);
+        }
+      }
+
+      function clearEntry(entry) {
+        if (!entry) return;
+        const { input } = entry;
+        if (!input) return;
+        if (input.type === "checkbox" || input.type === "radio") {
+          input.checked = false;
+        } else {
+          input.value = "";
+        }
+        input.required = false;
+        input.setCustomValidity("");
+        input.classList.remove("is-valid", "is-invalid");
+      }
+
+      function validateEmails() {
+        const emailEntry = fieldRegistry.get("email");
+        const confirmEntry = fieldRegistry.get("confirmarEmail");
+        if (!emailEntry || !confirmEntry) return;
+        const emailVal = emailEntry.input.value.trim().toLowerCase();
+        const confirmVal = confirmEntry.input.value.trim().toLowerCase();
+        if (emailVal && confirmVal && emailVal !== confirmVal) {
+          emailEntry.input.setCustomValidity("Os e-mails devem ser iguais.");
+          confirmEntry.input.setCustomValidity("Os e-mails devem ser iguais.");
+        } else {
+          emailEntry.input.setCustomValidity("");
+          confirmEntry.input.setCustomValidity("");
+        }
+      }
+
+      function validateWhatsapp() {
+        const entry = fieldRegistry.get("whatsapp");
+        if (!entry) return;
+        const value = entry.input.value.trim();
+        if (value && value.length !== 11) {
+          entry.input.setCustomValidity("Informe exatamente 11 dígitos (DDD + número).");
+        } else {
+          entry.input.setCustomValidity("");
+        }
+      }
+
+      function togglePcdFields() {
+        const pcdEntry = fieldRegistry.get("pcd_ask");
+        const tipoEntry = fieldRegistry.get("tipo_def_ask");
+        const qualEntry = fieldRegistry.get("qual_deficiencia_ask");
+        const isPcd = pcdEntry?.input?.value === "sim";
+        if (tipoEntry) {
+          tipoEntry.wrapper.style.display = isPcd ? "" : "none";
+          tipoEntry.input.required = isPcd;
+          if (!isPcd) clearEntry(tipoEntry);
+        }
+        if (qualEntry) {
+          const showQual = isPcd && tipoEntry?.input?.value && tipoEntry.input.value !== "selecione";
+          qualEntry.wrapper.style.display = showQual ? "" : "none";
+          qualEntry.input.required = showQual;
+          if (!showQual) clearEntry(qualEntry);
+        }
+      }
+
+      function toggleResponsavelSection() {
+        const section = document.querySelector('[data-section-id="dados-responsavel"]');
+        const age = parseInt(fieldRegistry.get("idade")?.input?.value || "0", 10);
+        const tipoDef = fieldRegistry.get("tipo_def_ask")?.input?.value || "";
+        const ageValid = Number.isFinite(age) && age > 0;
+        const shouldShow = (ageValid && age < 18) || tipoDef === "intelectual";
+        if (!section) return;
+        section.style.display = shouldShow ? "" : "none";
+        if (!shouldShow) {
+          ["cpfresponsavel", "nomeCompletoResponsavel"].forEach((id) => clearEntry(fieldRegistry.get(id)));
+        } else {
+          ["cpfresponsavel", "nomeCompletoResponsavel"].forEach((id) => {
+            const entry = fieldRegistry.get(id);
+            if (entry?.config?.required === "conditional") entry.input.required = true;
+          });
+        }
+      }
+
+      function applyStatusDefault() {
+        const statusEntry = fieldRegistry.get("tipoMatricula");
+        if (!statusEntry) return;
+        const display = document.getElementById("tipoMatricula-display");
+        const now = new Date();
+        const start = new Date("2025-12-31T00:00:00");
+        const end = new Date("2026-01-09T23:59:59");
+        if (now >= start && now <= end) {
+          statusEntry.input.value = "Oficina de Férias";
+          if (display) display.value = "Oficina de Férias";
+        }
+      }
 
       function createOptionElements(options, targetSelect) {
         targetSelect.innerHTML = "";
@@ -1613,6 +1795,34 @@
       }
 
       function buildField(field) {
+        if (field.id === "tipoMatricula") {
+          const hidden = document.createElement("input");
+          hidden.type = "hidden";
+          hidden.id = field.id;
+          if (field.name) hidden.name = field.name;
+          formElement.appendChild(hidden);
+
+          const statusWrapper = document.createElement("div");
+          statusWrapper.className = "d-flex flex-column align-items-end text-end gap-2";
+          const label = document.createElement("label");
+          label.className = "form-label fw-semibold mb-0";
+          label.textContent = "Tipo de matrícula";
+          label.setAttribute("for", `${field.id}-display`);
+          const display = document.createElement("input");
+          display.type = "text";
+          display.className = "form-control text-end";
+          display.placeholder = "Tipo de matrícula";
+          display.id = `${field.id}-display`;
+          display.addEventListener("input", () => {
+            hidden.value = display.value.trim();
+            updateNivelOptions();
+          });
+          statusWrapper.append(label, display);
+          if (statusSlot) statusSlot.appendChild(statusWrapper);
+          fieldRegistry.set(field.id, { config: field, input: hidden, wrapper: statusWrapper });
+          return null;
+        }
+
         const formGroup = document.createElement("div");
         formGroup.className = "col-12";
         formGroup.dataset.fieldId = field.id;
@@ -1679,19 +1889,35 @@
           if (field.required === true) input.required = true;
           applyValidationAttributes(input, field.validation);
           if (field.type === "file" && field.accept) input.accept = field.accept;
+          if (digitOnlyFields.has(field.id)) input.dataset.digitsOnly = "true";
+          if (field.id === "numero") input.dataset.numero = "true";
         }
 
         if (field.type !== "hidden") {
           const feedback = document.createElement("div");
           feedback.className = "invalid-feedback";
           feedback.textContent = "Este campo é obrigatório ou possui formato inválido.";
+          let appendElement = input;
+          if (field.id === "cep") {
+            const group = document.createElement("div");
+            group.className = "input-group";
+            group.appendChild(input);
+            appendElement = group;
+          }
           if (field.type === "file") {
             const help = document.createElement("div");
             help.className = "form-text";
             help.textContent = "Anexe o arquivo solicitado.";
             formGroup.appendChild(help);
           }
-          formGroup.append(input, feedback);
+          formGroup.append(appendElement, feedback);
+          if (field.id === "cep") {
+            const helper = document.createElement("div");
+            helper.id = "cep-feedback";
+            helper.className = "form-text text-muted";
+            helper.textContent = "Digite 8 dígitos para buscar o endereço automaticamente.";
+            formGroup.appendChild(helper);
+          }
         } else {
           formGroup.appendChild(input);
         }
@@ -1804,6 +2030,8 @@
           evaluateFieldRequired(id);
         });
         formConfig.sections.forEach((section) => evaluateSection(section));
+        togglePcdFields();
+        toggleResponsavelSection();
       }
 
       function buildSection(section) {
@@ -1820,7 +2048,7 @@
         row.className = "row g-3";
         section.fields.forEach((field) => {
           const fieldEl = buildField(field);
-          row.appendChild(fieldEl);
+          if (fieldEl) row.appendChild(fieldEl);
         });
         sectionContainer.appendChild(row);
         sectionsContainer.appendChild(sectionContainer);
@@ -1857,11 +2085,22 @@
         const targetId = input.dataset.mustMatch;
         if (!targetId) return;
         const targetEntry = fieldRegistry.get(targetId);
-        const targetValue = targetEntry?.input?.value || "";
-        if (input.value && input.value !== targetValue) {
-          input.setCustomValidity("Os valores precisam ser iguais.");
+        const targetValue = (targetEntry?.input?.value || "").trim();
+        const inputValue = (input.value || "").trim();
+        if (targetId === "email" || input.id === "confirmarEmail") {
+          const normalizedInput = inputValue.trim().toLowerCase();
+          const normalizedTarget = targetValue.trim().toLowerCase();
+          if (normalizedInput && normalizedTarget && normalizedInput !== normalizedTarget) {
+            input.setCustomValidity("Os valores precisam ser iguais.");
+          } else {
+            input.setCustomValidity("");
+          }
         } else {
-          input.setCustomValidity("");
+          if (inputValue && inputValue !== targetValue) {
+            input.setCustomValidity("Os valores precisam ser iguais.");
+          } else {
+            input.setCustomValidity("");
+          }
         }
       }
 
@@ -1892,14 +2131,20 @@
         const possessEntry = fieldRegistry.get("possuirg");
         if (!possessEntry) return;
         const value = possessEntry.input.value;
-        const showRG = value === "sim" || value === "";
-        const showCertidao = value === "nao" || value === "";
+        const showRG = value === "sim";
+        const showCertidao = value === "nao";
         ["rg_frente", "rg_verso"].forEach((id) => {
           const entry = fieldRegistry.get(id);
-          if (entry) entry.wrapper.style.display = showRG ? "" : "none";
+          if (entry) {
+            entry.wrapper.style.display = showRG ? "" : "none";
+            if (!showRG) clearEntry(entry);
+          }
         });
         const certidaoEntry = fieldRegistry.get("certidao_nasc");
-        if (certidaoEntry) certidaoEntry.wrapper.style.display = showCertidao ? "" : "none";
+        if (certidaoEntry) {
+          certidaoEntry.wrapper.style.display = showCertidao ? "" : "none";
+          if (!showCertidao) clearEntry(certidaoEntry);
+        }
       }
 
       function computeAge() {
@@ -1969,6 +2214,8 @@
       function attachEvents() {
         formElement.addEventListener("input", (event) => {
           if (!(event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement || event.target instanceof HTMLSelectElement)) return;
+          if (event.target.dataset.digitsOnly === "true") sanitizeDigitsInput(event.target);
+          if (event.target.dataset.numero === "true") sanitizeNumeroInput(event.target);
           enforceTransforms(event);
           enforceExactLength(event.target);
           enforceMatch(event.target);
@@ -1977,6 +2224,18 @@
           } else if (event.target.dataset.readonlyDynamic === "true" && event.target.value) {
             event.target.readOnly = true;
           }
+          if (event.target.id === "whatsapp") validateWhatsapp();
+          if (event.target.id === "email" || event.target.id === "confirmarEmail") validateEmails();
+          if (event.target.id === "cep") {
+            const cepValue = event.target.value.trim();
+            if (cepValue.length === 8) {
+              fetchCepBrasilApi(cepValue);
+            } else {
+              lastCepSearched = "";
+              setLoadingCep(false);
+              setCepMessage("Digite 8 dígitos para buscar o endereço automaticamente.", "muted");
+            }
+          }
           handleConditionalFields();
         });
 
@@ -1984,6 +2243,8 @@
           if (!(event.target instanceof HTMLInputElement || event.target instanceof HTMLSelectElement)) return;
           if (event.target.id === "tipoMatricula") updateNivelOptions();
           if (event.target.id === "possuirg") toggleDocumentFields();
+          if (event.target.id === "pcd_ask" || event.target.id === "tipo_def_ask") togglePcdFields();
+          if (event.target.id === "tipo_def_ask") toggleResponsavelSection();
           handleConditionalFields();
         });
 
@@ -1997,6 +2258,10 @@
 
         formElement.addEventListener("submit", (event) => {
           event.preventDefault();
+          validateEmails();
+          validateWhatsapp();
+          const numeroEntry = fieldRegistry.get("numero");
+          if (numeroEntry) sanitizeNumeroInput(numeroEntry.input);
           const formValid = formElement.checkValidity();
           formElement.classList.add("was-validated");
           if (!formValid) return;
@@ -2011,6 +2276,11 @@
             });
             updateNivelOptions();
             toggleDocumentFields();
+            togglePcdFields();
+            toggleResponsavelSection();
+            lastCepSearched = "";
+            setLoadingCep(false);
+            setCepMessage("Digite 8 dígitos para buscar o endereço automaticamente.", "muted");
             handleConditionalFields();
           }, 0);
         });
@@ -2037,8 +2307,11 @@
       function init() {
         formConfig.sections.forEach(buildSection);
         formElement.id = formConfig.meta.formId || formElement.id;
+        applyStatusDefault();
         updateNivelOptions();
         toggleDocumentFields();
+        togglePcdFields();
+        toggleResponsavelSection();
         handleConditionalFields();
         attachEvents();
       }

@@ -1770,7 +1770,7 @@
         const start = new Date("2025-12-31T00:00:00");
         const end = new Date("2026-01-09T23:59:59");
         if (now >= start && now <= end) {
-          setTipoMatriculaValue("Oficina de Férias");
+          setTipoMatriculaValue("Oficina de férias");
         } else {
           const current = statusEntry.input.value || "";
           setTipoMatriculaValue(current);
@@ -1795,8 +1795,12 @@
         if (validation.exactLength) input.dataset.exactLength = validation.exactLength;
         if (validation.exactLengthIfNotEmpty) input.dataset.exactLengthIfNotEmpty = validation.exactLengthIfNotEmpty;
         if (validation.mustMatchFieldId) input.dataset.mustMatch = validation.mustMatchFieldId;
-        if (validation.transform && transforms[validation.transform]) {
+        if (validation.transform && transforms[validation.transform] && !digitOnlyFields.has(input.id)) {
           input.dataset.transform = validation.transform;
+        }
+        if (digitOnlyFields.has(input.id)) {
+          input.setAttribute("pattern", "\\d*");
+          input.inputMode = "numeric";
         }
       }
 

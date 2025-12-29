@@ -2350,5 +2350,180 @@
       init();
     </script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+      window.addEventListener("DOMContentLoaded", () => {
+        const prefill = {
+          tipomatricula: "{{ $json.tipomatricula }}",
+          cpf_aluno: "{{ $json.cpf_aluno }}",
+          nome: "{{ $json.nome }}",
+          data_nasc: "{{ $json.data_nasc }}",
+          idade: "{{ $json.idade }}",
+          faixa_etaria: "{{ $json.faixa_etaria }}",
+          raca_cor: "{{ $json.raca_cor }}",
+          genero: "{{ $json.genero }}",
+          cep: "{{ $json.cep }}",
+          logradouro: "{{ $json.logradouro }}",
+          numero: "{{ $json.numero }}",
+          complemento: "{{ $json.complemento }}",
+          bairro: "{{ $json.bairro }}",
+          cidade: "{{ $json.cidade }}",
+          email: "{{ $json.email }}",
+          telefone: "{{ $json.telefone }}",
+          pcd_ask: "{{ $json.pcd_ask }}",
+          tipo_pcd_ask: "{{ $json.tipo_pcd_ask }}",
+          qual_deficiencia_ask: "{{ $json.qual_deficiencia_ask }}",
+          cpf_responsavel: "{{ $json.cpf_responsavel }}",
+          nome_responsavel: "{{ $json.nome_responsavel }}",
+          modalidade: "{{ $json.modalidade }}",
+          nivel: "{{ $json.nivel }}",
+          turma: "{{ $json.turma }}",
+          dias: "{{ $json.dias }}",
+          horario: "{{ $json.horario }}",
+          sala: "{{ $json.sala }}",
+          professor: "{{ $json.professor }}"
+        };
+
+        const fallbackPattern = /^\s*\{\{\s*\$json\.[^}]+\}\}\s*$/;
+        const sanitizeTemplateValue = (value) => {
+          if (value === undefined || value === null) return "";
+          const str = String(value).trim();
+          if (!str || fallbackPattern.test(str)) return "";
+          return str;
+        };
+
+        const normalizeDigitsOnly = (value) => sanitizeTemplateValue(value).replace(/\D+/g, "");
+        const normalizeNumero = (value) => {
+          const sanitized = sanitizeTemplateValue(value);
+          if (!sanitized) return "";
+          if (sanitized.trim().toUpperCase() === "SN") return "SN";
+          return sanitized.replace(/\D+/g, "");
+        };
+        const normalizeEmail = (value) => sanitizeTemplateValue(value);
+        const normalizeByKey = (key, value) => {
+          switch (key) {
+            case "cpf_aluno":
+            case "cpf_responsavel":
+            case "cep":
+            case "telefone":
+              return normalizeDigitsOnly(value);
+            case "numero":
+              return normalizeNumero(value);
+            case "email":
+              return normalizeEmail(value);
+            default:
+              return sanitizeTemplateValue(value);
+          }
+        };
+
+        const resolvedPrefill = Object.fromEntries(
+          Object.entries(prefill).map(([key, value]) => [key, normalizeByKey(key, value)])
+        );
+
+        const dispatchUpdateEvents = (element) => {
+          ["input", "change"].forEach((type) => element.dispatchEvent(new Event(type, { bubbles: true })));
+        };
+
+        const truthyValues = ["sim", "true", "1", "on", "yes", "y"];
+        const falsyValues = ["nao", "não", "false", "0", "off", "no", "n"];
+
+        const setSelectValue = (select, value) => {
+          const target = (value || "").toString().toLowerCase();
+          let matched = null;
+          Array.from(select.options).forEach((opt) => {
+            const optValue = (opt.value || "").toLowerCase();
+            const optText = (opt.textContent || "").toLowerCase();
+            if (optValue === target || optText === target) matched = opt;
+          });
+          if (matched) {
+            select.value = matched.value;
+          } else {
+            select.value = value ?? "";
+          }
+          dispatchUpdateEvents(select);
+        };
+
+        const setTextValue = (element, value) => {
+          element.value = value ?? "";
+          dispatchUpdateEvents(element);
+        };
+
+        const setRadioValue = (elements, value) => {
+          const target = (value || "").toString().toLowerCase();
+          if (!target) return;
+          elements.forEach((radio) => {
+            const radioValue = (radio.value || "").toLowerCase();
+            const shouldCheck = radioValue === target;
+            radio.checked = shouldCheck;
+            if (shouldCheck) dispatchUpdateEvents(radio);
+          });
+        };
+
+        const setCheckboxValue = (elements, value) => {
+          const normalized = (value || "").toString().toLowerCase();
+          const list = normalized
+            .split(/[,;]/)
+            .map((part) => part.trim())
+            .filter(Boolean);
+          if (!normalized) return;
+
+          elements.forEach((checkbox) => {
+            let shouldCheck = false;
+            const checkboxValue = (checkbox.value || "").toLowerCase();
+            if (elements.length === 1) {
+              shouldCheck = truthyValues.includes(normalized)
+                ? true
+                : falsyValues.includes(normalized)
+                ? false
+                : checkbox.checked;
+            } else if (list.length > 0) {
+              shouldCheck = list.includes(checkboxValue);
+            }
+            checkbox.checked = shouldCheck;
+            dispatchUpdateEvents(checkbox);
+          });
+        };
+
+        const fillField = (key, value) => {
+          const targets = new Set();
+          const byId = document.getElementById(key);
+          if (byId) targets.add(byId);
+          document.querySelectorAll(`[name="${key}"]`).forEach((el) => targets.add(el));
+          if (!targets.size) return;
+
+          const elements = Array.from(targets);
+          const radios = elements.filter((el) => el instanceof HTMLInputElement && el.type === "radio");
+          if (radios.length) {
+            setRadioValue(radios, value);
+            return;
+          }
+
+          const checkboxes = elements.filter((el) => el instanceof HTMLInputElement && el.type === "checkbox");
+          if (checkboxes.length) {
+            setCheckboxValue(checkboxes, value);
+            return;
+          }
+
+          const select = elements.find((el) => el instanceof HTMLSelectElement);
+          if (select) {
+            setSelectValue(select, value);
+            return;
+          }
+
+          const textInput = elements.find(
+            (el) =>
+              el instanceof HTMLInputElement ||
+              el instanceof HTMLTextAreaElement ||
+              el instanceof HTMLSelectElement
+          );
+          if (textInput) {
+            setTextValue(textInput, value);
+          }
+        };
+
+        Object.entries(resolvedPrefill).forEach(([key, value]) => {
+          fillField(key, value);
+        });
+      });
+    </script>
   </body>
 </html>

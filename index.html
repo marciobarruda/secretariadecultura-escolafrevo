@@ -1762,6 +1762,32 @@
         updateNivelOptions();
       }
 
+      function applyPrefillFromJson() {
+        const source =
+          typeof $json !== "undefined"
+            ? Array.isArray($json)
+              ? $json[0]
+              : $json
+            : typeof window.prefillData !== "undefined"
+            ? window.prefillData
+            : null;
+        if (!source) return;
+        fieldRegistry.forEach((entry) => {
+          const key = entry.config.name || entry.config.id;
+          if (!key || !(key in source)) return;
+          const value = source[key];
+          if (value === undefined || value === null) return;
+          if (entry.input instanceof HTMLInputElement || entry.input instanceof HTMLSelectElement || entry.input instanceof HTMLTextAreaElement) {
+            entry.input.value = value;
+            if (entry.input.dataset.digitsOnly === "true") sanitizeDigitsInput(entry.input);
+            if (entry.input.dataset.numero === "true") sanitizeNumeroInput(entry.input);
+          }
+        });
+        computeAge();
+        togglePcdFields();
+        toggleResponsavelSection();
+      }
+
       function applyStatusDefault() {
         const statusEntry = fieldRegistry.get("tipoMatricula");
         if (!statusEntry) return;
@@ -2311,6 +2337,7 @@
       function init() {
         formConfig.sections.forEach(buildSection);
         formElement.id = formConfig.meta.formId || formElement.id;
+        applyPrefillFromJson();
         applyStatusDefault();
         updateNivelOptions();
         toggleDocumentFields();

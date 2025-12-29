@@ -1369,7 +1369,19 @@
             }
 
             // ⬇️ EXECUTA SOMENTE APÓS O USUÁRIO SAIR DO CAMPO (BLUR)
-            document.getElementById("datanascimento").addEventListener("blur", calcularIdade);
+            const dataNascimentoField = document.getElementById("datanascimento");
+            if (dataNascimentoField) {
+                const handleNascimentoChange = () => {
+                    calcularIdade();
+                    if (typeof window.verificarNecessidadeResponsavel === "function") {
+                        window.verificarNecessidadeResponsavel();
+                    }
+                };
+
+                dataNascimentoField.addEventListener("blur", handleNascimentoChange);
+                dataNascimentoField.addEventListener("change", handleNascimentoChange);
+                dataNascimentoField.addEventListener("input", handleNascimentoChange);
+            }
 
             document.getElementById("cpfresponsavel").addEventListener("input", function () {
                 this.value = this.value.replace(/\D/g, ""); // Remove caracteres não numéricos
@@ -1697,24 +1709,40 @@
             }
         });
 
-        // Lógica unificada para exibir a seção do Responsável
-        document.addEventListener("DOMContentLoaded", function () {
-            window.verificarNecessidadeResponsavel = function () {
-                const tipoDeficiencia = document.getElementById("tipo_def_ask");
-                const pcdAsk = document.getElementById("pcd_ask");
+            // Lógica unificada para exibir a seção do Responsável
+            document.addEventListener("DOMContentLoaded", function () {
+                window.verificarNecessidadeResponsavel = function () {
+                    const tipoDeficiencia = document.getElementById("tipo_def_ask");
                 const cpfResponsavel = document.getElementById("cpfresponsavel");
                 const nomeResponsavel = document.getElementById("nomeCompletoResponsavel");
                 const sectionResponsavel = document.getElementById("dados-responsavel");
                 const idadeField = document.getElementById("idade");
+                const dataNascimentoField = document.getElementById("datanascimento");
 
                 if (!sectionResponsavel || !idadeField) {
                     console.warn("Elementos da seção do responsável não encontrados.");
                     return;
                 }
 
-                let idade = parseInt(idadeField.value) || 0;
+                let idade = parseInt(idadeField.value, 10) || 0;
+
+                // Calcula a idade a partir da data de nascimento caso o campo idade ainda não tenha sido preenchido
+                if ((!idade || idade <= 0) && dataNascimentoField && dataNascimentoField.value) {
+                    const hoje = new Date();
+                    const nascimento = new Date(dataNascimentoField.value);
+                    if (!isNaN(nascimento)) {
+                        idade = hoje.getFullYear() - nascimento.getFullYear();
+                        const mes = hoje.getMonth() - nascimento.getMonth();
+                        if (mes < 0 || (mes === 0 && hoje.getDate() < nascimento.getDate())) {
+                            idade--;
+                        }
+                        // Mantém o campo idade sincronizado para evitar discrepâncias em chamadas futuras
+                        idadeField.value = idade;
+                    }
+                }
+
                 let isMenor = (idade > 0 && idade < 18);
-                let isIntelectual = (pcdAsk && pcdAsk.value === "sim" && tipoDeficiencia && tipoDeficiencia.value === "intelectual");
+                let isIntelectual = (tipoDeficiencia && tipoDeficiencia.value.toLowerCase() === "intelectual");
 
                 console.log(`Checking Responsible: Age=${idade}, Menor=${isMenor}, Intel=${isIntelectual}`);
 
@@ -1733,9 +1761,7 @@
             };
 
             // Event listeners
-            const pcdAsk = document.getElementById("pcd_ask");
             const tipoDeficiencia = document.getElementById("tipo_def_ask");
-            if (pcdAsk) pcdAsk.addEventListener("change", window.verificarNecessidadeResponsavel);
             if (tipoDeficiencia) tipoDeficiencia.addEventListener("change", window.verificarNecessidadeResponsavel);
 
             // Also run on load to catch pre-filled data

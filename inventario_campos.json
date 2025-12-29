@@ -1,0 +1,907 @@
+{
+  "meta": {
+    "formId": "userForm",
+    "title": "Secretaria de Cultura • Escola de Frevo",
+    "submitEndpoint": "https://webhook-n8n-dev-conectarecife.recife.pe.gov.br/webhook/efr",
+    "notes": [
+      "No submit, só são incluídos campos que tenham atributo 'name'.",
+      "Campos do tipo file são enviados como '<name>_base64' e '<name>_ext'.",
+      "Campos confirmadores (confirmarEmail/confirmarWhatsApp) não possuem 'name' e não são enviados.",
+      "O campo #proximonivel não tem 'name' e não é enviado."
+    ]
+  },
+  "sections": [
+    {
+      "id": "dados-pessoais",
+      "label": "Dados Pessoais",
+      "fields": [
+        {
+          "id": "tipoMatricula",
+          "name": "tipomatricula",
+          "label": "Tipo de matrícula",
+          "type": "hidden",
+          "valueTemplate": "{{ $json.query.tipo_de_matricula }}",
+          "required": false,
+          "readOnly": false,
+          "options": null,
+          "validation": null,
+          "dynamic": {
+            "controls": [
+              "Atualiza opções do select #nivel via atualizarNiveis(tipoMatricula, proximonivel)"
+            ]
+          },
+          "sentOnSubmit": true
+        },
+        {
+          "id": "proximonivel",
+          "name": null,
+          "label": "Próximo nível",
+          "type": "text",
+          "visible": false,
+          "valueTemplate": "{{ $json.query.nivel }}",
+          "required": false,
+          "readOnly": true,
+          "options": null,
+          "validation": null,
+          "dynamic": {
+            "notes": [
+              "Está no DOM, mas não é enviado porque não tem atributo name."
+            ]
+          },
+          "sentOnSubmit": false
+        },
+        {
+          "id": "cpf",
+          "name": "cpf_aluno",
+          "label": "CPF",
+          "type": "text",
+          "placeholder": "000.000.000-00",
+          "valueTemplate": "{{ $json.query.cpf }}",
+          "required": false,
+          "readOnly": "dynamic",
+          "options": null,
+          "validation": {
+            "client": [
+              "onblur buscarNome() chama webhook se cpf.length===11"
+            ],
+            "notes": [
+              "Se o valor vier com máscara (pontos/traço), cpf.length pode não ser 11."
+            ]
+          },
+          "dynamic": {
+            "onLoad": [
+              "Se vier preenchido, seta readonly e chama buscarNome()"
+            ],
+            "webhookLookup": {
+              "endpoint": "https://webhook-n8n-dev-conectarecife.recife.pe.gov.br/webhook/buscar-pessoa",
+              "method": "POST",
+              "payload": {
+                "cpf": "<cpf (sem máscara, 11 dígitos)>"
+              },
+              "fills": [
+                {
+                  "targetId": "nomeCompleto",
+                  "property": "value",
+                  "fromResponsePath": "nome"
+                }
+              ]
+            }
+          },
+          "sentOnSubmit": true
+        },
+        {
+          "id": "nomeCompleto",
+          "name": "nome",
+          "label": "Nome Completo",
+          "type": "text",
+          "placeholder": null,
+          "valueTemplate": "{{ $json.query.nome }}",
+          "required": true,
+          "readOnly": "dynamic",
+          "options": null,
+          "validation": {
+            "pattern": "[A-Za-zÀ-ÖØ-öø-ÿ\\s]+",
+            "inputSanitizer": "remove não-letras/espaço",
+            "transform": "upperCase"
+          },
+          "dynamic": {
+            "onLoad": [
+              "Se vier preenchido, seta readonly"
+            ]
+          },
+          "sentOnSubmit": true
+        },
+        {
+          "id": "datanascimento",
+          "name": "data_nasc",
+          "label": "Data de Nascimento",
+          "type": "date",
+          "placeholder": null,
+          "valueTemplate": null,
+          "required": false,
+          "readOnly": false,
+          "options": null,
+          "validation": null,
+          "dynamic": {
+            "events": [
+              "blur -> calcularIdade()",
+              "blur -> buscarTurmas()"
+            ],
+            "ageRule": {
+              "minAgeYears": 6,
+              "behaviorIfUnderMin": [
+                "confirm dialog",
+                "OK: oculta container e mostra mensagem",
+                "Cancelar: limpa data/idade/faixa e mantém formulário"
+              ]
+            }
+          },
+          "sentOnSubmit": true
+        },
+        {
+          "id": "idade",
+          "name": "idade",
+          "label": "Idade",
+          "type": "number",
+          "placeholder": null,
+          "valueTemplate": null,
+          "required": false,
+          "readOnly": true,
+          "options": null,
+          "validation": null,
+          "dynamic": {
+            "filledBy": "calcularIdade()"
+          },
+          "sentOnSubmit": true
+        },
+        {
+          "id": "faixaetaria",
+          "name": "faixa_etaria",
+          "label": "Faixa Etária",
+          "type": "text",
+          "placeholder": null,
+          "valueTemplate": null,
+          "required": false,
+          "readOnly": true,
+          "options": null,
+          "validation": null,
+          "dynamic": {
+            "webhookLookup": {
+              "endpoint": "https://webhook-n8n-dev-conectarecife.recife.pe.gov.br/webhook/modalidade",
+              "method": "POST",
+              "payload": {
+                "idade": "<idade>"
+              },
+              "fills": [
+                {
+                  "targetId": "faixaetaria",
+                  "property": "value",
+                  "fromResponsePath": "[0].faixa_etaria"
+                },
+                {
+                  "targetId": "modalidade",
+                  "property": "value",
+                  "fromResponsePath": "[0].modalidade"
+                }
+              ]
+            }
+          },
+          "sentOnSubmit": true
+        },
+        {
+          "id": "racacor",
+          "name": "raca_cor",
+          "label": "Raça/Cor",
+          "type": "select",
+          "required": false,
+          "readOnly": false,
+          "options": [
+            { "value": "selecione", "label": "Selecione" },
+            { "value": "amarela", "label": "Amarela" },
+            { "value": "branca", "label": "Branca" },
+            { "value": "indigena", "label": "Indígena" },
+            { "value": "parda", "label": "Parda" },
+            { "value": "preta", "label": "Preta" },
+            { "value": "naoinformar", "label": "Prefiro não informar" }
+          ],
+          "validation": null,
+          "dynamic": null,
+          "sentOnSubmit": true
+        },
+        {
+          "id": "genero",
+          "name": "genero",
+          "label": "Gênero",
+          "type": "select",
+          "required": false,
+          "readOnly": false,
+          "options": [
+            { "value": "selecione", "label": "Selecione" },
+            { "value": "feminino", "label": "Feminino" },
+            { "value": "masculino", "label": "Masculino" },
+            { "value": "naoinformar", "label": "Prefiro não informar" }
+          ],
+          "validation": null,
+          "dynamic": null,
+          "sentOnSubmit": true
+        }
+      ]
+    },
+    {
+      "id": "endereco",
+      "label": "Endereço",
+      "fields": [
+        {
+          "id": "cep",
+          "name": "cep",
+          "label": "CEP",
+          "type": "text",
+          "required": true,
+          "readOnly": false,
+          "placeholder": "00000-000",
+          "validation": {
+            "maxLength": 8,
+            "transform": "digitsOnly"
+          },
+          "dynamic": {
+            "onChange": "buscarEndereco() via ViaCEP"
+          },
+          "sentOnSubmit": true
+        },
+        {
+          "id": "logradouro",
+          "name": "logradouro",
+          "label": "Logradouro",
+          "type": "text",
+          "required": false,
+          "readOnly": false,
+          "placeholder": "Rua/Av/Estrada",
+          "validation": {
+            "transform": "upperCase"
+          },
+          "dynamic": {
+            "filledBy": "ViaCEP"
+          },
+          "sentOnSubmit": true
+        },
+        {
+          "id": "numero",
+          "name": "numero",
+          "label": "Número",
+          "type": "text",
+          "required": false,
+          "readOnly": false,
+          "placeholder": "Número",
+          "validation": null,
+          "dynamic": null,
+          "sentOnSubmit": true
+        },
+        {
+          "id": "complemento",
+          "name": "complemento",
+          "label": "Complemento",
+          "type": "text",
+          "required": false,
+          "readOnly": false,
+          "placeholder": "Apto, Bloco, etc.",
+          "validation": {
+            "transform": "upperCase"
+          },
+          "dynamic": {
+            "filledBy": "ViaCEP (se houver)"
+          },
+          "sentOnSubmit": true
+        },
+        {
+          "id": "bairro",
+          "name": "bairro",
+          "label": "Bairro",
+          "type": "text",
+          "required": false,
+          "readOnly": false,
+          "placeholder": "Bairro",
+          "validation": {
+            "transform": "upperCase"
+          },
+          "dynamic": {
+            "filledBy": "ViaCEP"
+          },
+          "sentOnSubmit": true
+        },
+        {
+          "id": "cidade",
+          "name": "cidade",
+          "label": "Cidade",
+          "type": "text",
+          "required": false,
+          "readOnly": false,
+          "placeholder": "Recife",
+          "validation": {
+            "transform": "upperCase"
+          },
+          "dynamic": {
+            "filledBy": "ViaCEP"
+          },
+          "sentOnSubmit": true
+        },
+        {
+          "id": "email",
+          "name": "email",
+          "label": "E-mail",
+          "type": "email",
+          "required": false,
+          "readOnly": false,
+          "placeholder": "seuemail@exemplo.com",
+          "validation": {
+            "regex": "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$",
+            "transform": "lowerCase"
+          },
+          "dynamic": {
+            "confirmFieldId": "confirmarEmail"
+          },
+          "sentOnSubmit": true
+        },
+        {
+          "id": "confirmarEmail",
+          "name": null,
+          "label": "Confirme seu E-mail",
+          "type": "email",
+          "required": false,
+          "readOnly": false,
+          "placeholder": "Confirme seu e-mail",
+          "validation": {
+            "mustMatchFieldId": "email"
+          },
+          "dynamic": null,
+          "sentOnSubmit": false
+        },
+        {
+          "id": "whatsapp",
+          "name": "telefone",
+          "label": "WhatsApp (11 dígitos)",
+          "type": "text",
+          "required": false,
+          "readOnly": false,
+          "placeholder": "(81) 90000-0000",
+          "validation": {
+            "transform": "digitsOnly",
+            "exactLength": 11
+          },
+          "dynamic": {
+            "confirmFieldId": "confirmarWhatsApp"
+          },
+          "sentOnSubmit": true
+        },
+        {
+          "id": "confirmarWhatsApp",
+          "name": null,
+          "label": "Confirme seu WhatsApp",
+          "type": "text",
+          "required": false,
+          "readOnly": false,
+          "placeholder": "Confirme seu WhatsApp",
+          "validation": {
+            "mustMatchFieldId": "whatsapp"
+          },
+          "dynamic": null,
+          "sentOnSubmit": false
+        }
+      ]
+    },
+    {
+      "id": "dados-saude",
+      "label": "Saúde",
+      "fields": [
+        {
+          "id": "pcd_ask",
+          "name": "pcd_ask",
+          "label": "É pessoa com deficiência (PCD)?",
+          "type": "select",
+          "required": false,
+          "options": [
+            { "value": "selecione", "label": "Selecione" },
+            { "value": "nao", "label": "Não" },
+            { "value": "sim", "label": "Sim" }
+          ],
+          "dynamic": {
+            "showsFieldIds": [
+              "tipo_def_ask",
+              "qual_deficiencia_ask"
+            ],
+            "responsibleLogicTrigger": true
+          },
+          "sentOnSubmit": true
+        },
+        {
+          "id": "tipo_def_ask",
+          "name": "tipo_pcd_ask",
+          "label": "Qual o tipo de deficiência?",
+          "type": "select",
+          "required": "conditional",
+          "options": [
+            { "value": "selecione", "label": "Selecione" },
+            { "value": "auditiva", "label": "Auditiva" },
+            { "value": "fisica_motora", "label": "Física/motora" },
+            { "value": "intelectual", "label": "Intelectual" },
+            { "value": "visao", "label": "Visual" }
+          ],
+          "dynamic": {
+            "visibleWhen": {
+              "fieldId": "pcd_ask",
+              "equals": "sim"
+            },
+            "requiredWhen": {
+              "fieldId": "pcd_ask",
+              "equals": "sim"
+            },
+            "populates": {
+              "targetId": "qual_deficiencia_ask",
+              "optionsFrom": "deficiencias[tipo_def_ask]"
+            },
+            "responsibleLogicTrigger": true
+          },
+          "sentOnSubmit": true
+        },
+        {
+          "id": "qual_deficiencia_ask",
+          "name": "qual_deficiencia_ask",
+          "label": "Qual a deficiência?",
+          "type": "select",
+          "required": "conditional",
+          "options": "dynamic",
+          "dynamic": {
+            "visibleWhen": {
+              "fieldId": "tipo_def_ask",
+              "notEquals": "selecione"
+            },
+            "requiredWhen": {
+              "fieldId": "tipo_def_ask",
+              "notEquals": "selecione"
+            }
+          },
+          "sentOnSubmit": true
+        },
+        {
+          "id": "contraindicacao_medica_ask",
+          "name": "contraindicacao_medica_ask",
+          "label": "Possui contraindicação médica/doença crônica?",
+          "type": "select",
+          "options": [
+            { "value": "selecione", "label": "Selecione" },
+            { "value": "nao", "label": "Não" },
+            { "value": "sim", "label": "Sim" }
+          ],
+          "sentOnSubmit": true
+        },
+        {
+          "id": "qual_contraindicacao_ask",
+          "name": "qual_contraindicacao_ask",
+          "label": "Qual a contraindicação/doença?",
+          "type": "text",
+          "required": "conditional",
+          "validation": { "transform": "upperCase" },
+          "dynamic": {
+            "visibleWhen": {
+              "fieldId": "contraindicacao_medica_ask",
+              "equals": "sim"
+            },
+            "requiredWhen": {
+              "fieldId": "contraindicacao_medica_ask",
+              "equals": "sim"
+            }
+          },
+          "sentOnSubmit": true
+        },
+        {
+          "id": "realiza_atv_ask",
+          "name": "realiza_atv_ask",
+          "label": "Realiza alguma atividade física?",
+          "type": "select",
+          "options": [
+            { "value": "selecione", "label": "Selecione" },
+            { "value": "nao", "label": "Não" },
+            { "value": "sim", "label": "Sim" }
+          ],
+          "sentOnSubmit": true
+        },
+        {
+          "id": "descreva_atv_ask",
+          "name": "descreva_atv_ask",
+          "label": "Descreva a atividade",
+          "type": "text",
+          "required": "conditional",
+          "validation": { "transform": "upperCase" },
+          "dynamic": {
+            "visibleWhen": {
+              "fieldId": "realiza_atv_ask",
+              "equals": "sim"
+            },
+            "requiredWhen": {
+              "fieldId": "realiza_atv_ask",
+              "equals": "sim"
+            }
+          },
+          "sentOnSubmit": true
+        },
+        {
+          "id": "usa_mediamento_ask",
+          "name": "usa_medicamento_ask",
+          "label": "Faz uso contínuo de algum medicamento?",
+          "type": "select",
+          "options": [
+            { "value": "selecione", "label": "Selecione" },
+            { "value": "nao", "label": "Não" },
+            { "value": "sim", "label": "Sim" }
+          ],
+          "sentOnSubmit": true
+        },
+        {
+          "id": "descreva_medicamento_ask",
+          "name": "descreva_medicamento_ask",
+          "label": "Quais medicamentos?",
+          "type": "text",
+          "required": "conditional",
+          "validation": { "transform": "upperCase" },
+          "dynamic": {
+            "visibleWhen": {
+              "fieldId": "usa_mediamento_ask",
+              "equals": "sim"
+            },
+            "requiredWhen": {
+              "fieldId": "usa_mediamento_ask",
+              "equals": "sim"
+            }
+          },
+          "sentOnSubmit": true
+        },
+        {
+          "id": "alergia_ask",
+          "name": "alergia_ask",
+          "label": "Possui alergia ou contraindicação a medicamentos?",
+          "type": "select",
+          "options": [
+            { "value": "selecione", "label": "Selecione" },
+            { "value": "nao", "label": "Não" },
+            { "value": "sim", "label": "Sim" }
+          ],
+          "sentOnSubmit": true
+        },
+        {
+          "id": "descreva_alergia_ask",
+          "name": "descreva_alergia_ask",
+          "label": "Qual alergia/contraindicação?",
+          "type": "text",
+          "required": "conditional",
+          "validation": { "transform": "upperCase" },
+          "dynamic": {
+            "visibleWhen": {
+              "fieldId": "alergia_ask",
+              "equals": "sim"
+            },
+            "requiredWhen": {
+              "fieldId": "alergia_ask",
+              "equals": "sim"
+            }
+          },
+          "sentOnSubmit": true
+        }
+      ]
+    },
+    {
+      "id": "dados-responsavel",
+      "label": "Dados do Responsável",
+      "conditional": {
+        "showWhenAny": [
+          {
+            "type": "age",
+            "fieldId": "idade",
+            "operator": "<",
+            "value": 18
+          },
+          {
+            "type": "and",
+            "conditions": [
+              { "fieldId": "pcd_ask", "equals": "sim" },
+              { "fieldId": "tipo_def_ask", "equals": "intelectual" }
+            ]
+          }
+        ]
+      },
+      "fields": [
+        {
+          "id": "cpfresponsavel",
+          "name": "cpf_responsavel",
+          "label": "CPF do Responsável",
+          "type": "text",
+          "placeholder": "000.000.000-00",
+          "required": "conditional",
+          "validation": {
+            "transform": "digitsOnly",
+            "maxLength": 11,
+            "exactLengthIfNotEmpty": 11
+          },
+          "dynamic": {
+            "webhookLookup": {
+              "endpoint": "https://webhook-n8n-dev-conectarecife.recife.pe.gov.br/webhook/buscar-pessoa",
+              "method": "POST",
+              "payload": {
+                "cpf": "<cpf_responsavel (11 dígitos)>"
+              },
+              "fills": [
+                {
+                  "targetId": "nomeCompletoResponsavel",
+                  "property": "value",
+                  "fromResponsePath": "nome"
+                }
+              ]
+            }
+          },
+          "sentOnSubmit": true
+        },
+        {
+          "id": "nomeCompletoResponsavel",
+          "name": "nome_responsavel",
+          "label": "Nome do Responsável",
+          "type": "text",
+          "placeholder": "Nome Completo",
+          "required": "conditional",
+          "validation": {
+            "transform": "upperCase"
+          },
+          "sentOnSubmit": true
+        }
+      ]
+    },
+    {
+      "id": "dados-turma",
+      "label": "Dados da Turma",
+      "fields": [
+        {
+          "id": "modalidade",
+          "name": "modalidade",
+          "label": "Modalidade",
+          "type": "text",
+          "readOnly": true,
+          "dynamic": {
+            "filledBy": "webhook/modalidade (com base na idade)"
+          },
+          "sentOnSubmit": true
+        },
+        {
+          "id": "nivel",
+          "name": "nivel",
+          "label": "Nível",
+          "type": "select",
+          "options": "dynamic",
+          "dynamic": {
+            "rules": [
+              {
+                "when": { "fieldId": "tipomatricula", "equals": "Matrícula nova" },
+                "options": [
+                  { "value": "", "label": "Selecione o nível" },
+                  { "value": "Livre", "label": "Livre" },
+                  { "value": "Iniciante", "label": "Iniciante" }
+                ],
+                "disabled": false
+              },
+              {
+                "when": { "fieldId": "tipomatricula", "equals": "Renovação" },
+                "options": [
+                  {
+                    "value": "<proximonivel>",
+                    "label": "<proximonivel>"
+                  }
+                ],
+                "disabled": true
+              }
+            ],
+            "events": [
+              "change/blur -> buscarTurmas()",
+              "change -> limparCamposTurma()"
+            ]
+          },
+          "sentOnSubmit": true
+        },
+        {
+          "id": "turma",
+          "name": "turma",
+          "label": "Turma",
+          "type": "select",
+          "options": "dynamic",
+          "dynamic": {
+            "filledByWebhook": {
+              "endpoint": "https://webhook-n8n-dev-conectarecife.recife.pe.gov.br/webhook/turmas-frevo-consulta",
+              "method": "POST",
+              "payload": {
+                "faixa_etaria": "<faixa_etaria>",
+                "nivel": "<texto visível do option>",
+                "tipo_de_matricula": "<tipomatricula>"
+              },
+              "optionsLabelTemplate": "{turma} - {dias} ({horario}) - {local} - Prof. {professor}"
+            },
+            "onChange": "preencherDetalhesTurma()"
+          },
+          "sentOnSubmit": true
+        },
+        {
+          "id": "dias",
+          "name": "dias",
+          "label": "Dias",
+          "type": "text",
+          "readOnly": true,
+          "sentOnSubmit": true
+        },
+        {
+          "id": "horario",
+          "name": "horario",
+          "label": "Horário",
+          "type": "text",
+          "readOnly": true,
+          "sentOnSubmit": true
+        },
+        {
+          "id": "local",
+          "name": "sala",
+          "label": "Sala",
+          "type": "text",
+          "readOnly": true,
+          "sentOnSubmit": true
+        },
+        {
+          "id": "professor",
+          "name": "professor",
+          "label": "Professor",
+          "type": "text",
+          "readOnly": true,
+          "sentOnSubmit": true
+        }
+      ]
+    },
+    {
+      "id": "documentacao",
+      "label": "Documentação",
+      "fields": [
+        {
+          "id": "possuirg",
+          "name": "possuirg",
+          "label": "Possui RG",
+          "type": "select",
+          "options": [
+            { "value": "", "label": "" },
+            { "value": "sim", "label": "Sim" },
+            { "value": "nao", "label": "Não" }
+          ],
+          "dynamic": {
+            "controlsVisibility": [
+              "Se sim: mostrar rg_frente + rg_verso e ocultar certidao_nasc",
+              "Se não: ocultar rg_frente + rg_verso e mostrar certidao_nasc"
+            ],
+            "notes": [
+              "A função toggleFields() existe, mas não está claramente vinculada a onchange no select."
+            ]
+          },
+          "sentOnSubmit": true
+        },
+        {
+          "id": "rg_frente",
+          "name": "rg_frente",
+          "label": "Anexar RG/CNH frente",
+          "type": "file",
+          "required": false,
+          "sentOnSubmit": true,
+          "submitTransforms": [
+            { "name": "rg_frente_base64", "type": "string(base64)" },
+            { "name": "rg_frente_ext", "type": "string" }
+          ]
+        },
+        {
+          "id": "rg_verso",
+          "name": "rg_verso",
+          "label": "Anexar RG/CNH verso",
+          "type": "file",
+          "required": false,
+          "sentOnSubmit": true,
+          "submitTransforms": [
+            { "name": "rg_verso_base64", "type": "string(base64)" },
+            { "name": "rg_verso_ext", "type": "string" }
+          ]
+        },
+        {
+          "id": "certidao_nasc",
+          "name": "certidao_nasc",
+          "label": "Anexar certidão de nascimento",
+          "type": "file",
+          "required": false,
+          "sentOnSubmit": true,
+          "submitTransforms": [
+            { "name": "certidao_nasc_base64", "type": "string(base64)" },
+            { "name": "certidao_nasc_ext", "type": "string" }
+          ]
+        },
+        {
+          "id": "parecer_medico",
+          "name": "parecer_medico",
+          "label": "Anexar laudo médico",
+          "type": "file",
+          "required": false,
+          "sentOnSubmit": true,
+          "submitTransforms": [
+            { "name": "parecer_medico_base64", "type": "string(base64)" },
+            { "name": "parecer_medico_ext", "type": "string" }
+          ]
+        }
+      ]
+    }
+  ],
+  "computedOrDisplayOnly": [
+    {
+      "id": "tipoMatriculaDisplay",
+      "type": "span",
+      "label": "Tipo de matrícula (display)",
+      "sentOnSubmit": false
+    },
+    {
+      "id": "submitButton",
+      "type": "button",
+      "label": "Enviar Matrícula",
+      "sentOnSubmit": false
+    },
+    {
+      "id": "message",
+      "type": "div",
+      "label": "Mensagem (idade mínima)",
+      "sentOnSubmit": false
+    }
+  ],
+  "submitPayload": {
+    "baseFields": [
+      "tipomatricula",
+      "cpf_aluno",
+      "nome",
+      "data_nasc",
+      "idade",
+      "faixa_etaria",
+      "raca_cor",
+      "genero",
+      "cep",
+      "logradouro",
+      "numero",
+      "complemento",
+      "bairro",
+      "cidade",
+      "email",
+      "telefone",
+      "pcd_ask",
+      "tipo_pcd_ask",
+      "qual_deficiencia_ask",
+      "contraindicacao_medica_ask",
+      "qual_contraindicacao_ask",
+      "realiza_atv_ask",
+      "descreva_atv_ask",
+      "usa_medicamento_ask",
+      "descreva_medicamento_ask",
+      "alergia_ask",
+      "descreva_alergia_ask",
+      "cpf_responsavel",
+      "nome_responsavel",
+      "modalidade",
+      "nivel",
+      "turma",
+      "dias",
+      "horario",
+      "sala",
+      "professor",
+      "possuirg"
+    ],
+    "filesAsBase64": [
+      "rg_frente_base64",
+      "rg_frente_ext",
+      "rg_verso_base64",
+      "rg_verso_ext",
+      "certidao_nasc_base64",
+      "certidao_nasc_ext",
+      "parecer_medico_base64",
+      "parecer_medico_ext"
+    ]
+  }
+}

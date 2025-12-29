@@ -1758,6 +1758,15 @@
         }
       }
 
+      function setTipoMatriculaValue(value) {
+        const statusEntry = fieldRegistry.get("tipoMatricula");
+        if (!statusEntry) return;
+        statusEntry.input.value = value || "";
+        const display = document.getElementById("tipoMatricula-display");
+        if (display) display.textContent = value || "—";
+        updateNivelOptions();
+      }
+
       function applyStatusDefault() {
         const statusEntry = fieldRegistry.get("tipoMatricula");
         if (!statusEntry) return;
@@ -1766,8 +1775,10 @@
         const start = new Date("2025-12-31T00:00:00");
         const end = new Date("2026-01-09T23:59:59");
         if (now >= start && now <= end) {
-          statusEntry.input.value = "Oficina de Férias";
-          if (display) display.value = "Oficina de Férias";
+          setTipoMatriculaValue("Oficina de Férias");
+        } else {
+          const current = statusEntry.input.value || "";
+          setTipoMatriculaValue(current);
         }
       }
 
@@ -1803,20 +1814,14 @@
           formElement.appendChild(hidden);
 
           const statusWrapper = document.createElement("div");
-          statusWrapper.className = "d-flex flex-column align-items-end text-end gap-2";
-          const label = document.createElement("label");
-          label.className = "form-label fw-semibold mb-0";
+          statusWrapper.className = "modal-meta";
+          const label = document.createElement("span");
+          label.className = "modal-meta-label";
           label.textContent = "Tipo de matrícula";
-          label.setAttribute("for", `${field.id}-display`);
-          const display = document.createElement("input");
-          display.type = "text";
-          display.className = "form-control text-end";
-          display.placeholder = "Tipo de matrícula";
+          const display = document.createElement("span");
+          display.className = "modal-meta-value";
           display.id = `${field.id}-display`;
-          display.addEventListener("input", () => {
-            hidden.value = display.value.trim();
-            updateNivelOptions();
-          });
+          display.textContent = "—";
           statusWrapper.append(label, display);
           if (statusSlot) statusSlot.appendChild(statusWrapper);
           fieldRegistry.set(field.id, { config: field, input: hidden, wrapper: statusWrapper });

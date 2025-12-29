@@ -1011,7 +1011,7 @@
                 "name": null,
                 "label": "Confirme seu E-mail",
                 "type": "email",
-                "required": false,
+                "required": true,
                 "readOnly": false,
                 "placeholder": "Confirme seu e-mail",
                 "validation": {
@@ -1042,7 +1042,7 @@
                 "name": null,
                 "label": "Confirme seu WhatsApp",
                 "type": "text",
-                "required": false,
+                "required": true,
                 "readOnly": false,
                 "placeholder": "Confirme seu WhatsApp",
                 "validation": {
@@ -2246,6 +2246,14 @@
           enforceTransforms(event);
           enforceExactLength(event.target);
           enforceMatch(event.target);
+          if (event.target.id === "email") {
+            const confirmEmail = fieldRegistry.get("confirmarEmail")?.input;
+            if (confirmEmail) enforceMatch(confirmEmail);
+          }
+          if (event.target.id === "whatsapp") {
+            const confirmWhatsapp = fieldRegistry.get("confirmarWhatsApp")?.input;
+            if (confirmWhatsapp) enforceMatch(confirmWhatsapp);
+          }
           if (event.target.dataset.readonlyDynamic === "true" && event.target.value === "") {
             event.target.readOnly = false;
           } else if (event.target.dataset.readonlyDynamic === "true" && event.target.value) {

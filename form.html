@@ -2268,7 +2268,7 @@
 
         formElement.addEventListener("change", (event) => {
           if (!(event.target instanceof HTMLInputElement || event.target instanceof HTMLSelectElement)) return;
-          if (event.target.id === "tipoMatricula") updateNivelOptions();
+          if (event.target.id === "tipoMatricula") setTipoMatriculaValue(event.target.value);
           if (event.target.id === "possuirg") toggleDocumentFields();
           if (event.target.id === "pcd_ask" || event.target.id === "tipo_def_ask") togglePcdFields();
           if (event.target.id === "tipo_def_ask") toggleResponsavelSection();
@@ -2335,7 +2335,7 @@
         formConfig.sections.forEach(buildSection);
         formElement.id = formConfig.meta.formId || formElement.id;
         applyPrefillFromJson();
-        updateNivelOptions();
+        setTipoMatriculaValue(fieldRegistry.get("tipoMatricula")?.input?.value || "");
         toggleDocumentFields();
         togglePcdFields();
         toggleResponsavelSection();

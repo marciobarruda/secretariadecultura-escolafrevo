@@ -302,7 +302,7 @@
         padding-top: 1rem;
       }
 
-      #back-button {
+      .back-button {
         border-color: #d1d5db;
       }
 
@@ -2446,13 +2446,14 @@
           actions.className = "d-flex flex-wrap align-items-center justify-content-between mt-4 section-actions gap-2";
           const leftGroup = document.createElement("div");
           leftGroup.className = "d-flex gap-2";
-          const backBtn = document.createElement("button");
-          backBtn.type = "button";
-          backBtn.className = "btn btn-soft";
-          backBtn.id = "back-button";
-          backBtn.textContent = "Voltar";
-          backBtn.addEventListener("click", () => window.history.back());
-          leftGroup.appendChild(backBtn);
+          if (section.id !== "dados-pessoais") {
+            const backBtn = document.createElement("button");
+            backBtn.type = "button";
+            backBtn.className = "btn btn-soft back-button";
+            backBtn.textContent = "Voltar";
+            backBtn.addEventListener("click", () => window.history.back());
+            leftGroup.appendChild(backBtn);
+          }
           const rightGroup = document.createElement("div");
           rightGroup.className = "d-flex flex-wrap gap-2 justify-content-end";
           if (section.id === "dados-documentos") {
@@ -3030,10 +3031,6 @@
           if (event.target.id === "tipo_def_ask") toggleResponsavelSection();
           handleConditionalFields();
           updateSubmitEnabled();
-        });
-
-        document.getElementById("back-button")?.addEventListener("click", () => {
-          window.history.back();
         });
 
         const birthInput = fieldRegistry.get("datanascimento")?.input;

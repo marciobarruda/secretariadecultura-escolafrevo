@@ -1710,6 +1710,7 @@
       const statusSlot = document.getElementById("tipo-matricula-slot");
       const STORAGE_KEY_TRIAGEM = "triagem_esforco_extremo";
       const CAUTION_REDIRECT_SECONDS = 10;
+      const SUBMIT_ENDPOINT = "http://webhook-n8n-automacao.recife/webhook/matriculaefr";
       let formLocked = true;
       let screeningInitialized = false;
       let cautionCountdownId = null;
@@ -3043,6 +3044,59 @@
         backdrop.setAttribute("aria-hidden", "false");
       }
 
+      function setSubmitting(isSubmitting) {
+        const submitBtn = document.getElementById("section-submit-button");
+        if (!submitBtn) return;
+        submitBtn.disabled = isSubmitting || formLocked;
+        submitBtn.innerHTML = isSubmitting
+          ? '<span class="spinner-border spinner-border-sm me-2"></span>Enviando...'
+          : "Enviar matrícula";
+      }
+
+      function showSubmissionFeedback({ success, message }) {
+        const toast = document.createElement("div");
+        toast.className = "form-feedback active";
+        toast.innerHTML = `
+          <div class="form-feedback-dialog">
+            <button class="form-feedback-close" aria-label="Fechar">×</button>
+            <div class="form-feedback-title ${success ? "success" : "alert"}">${success ? "Envio realizado" : "Falha no envio"}</div>
+            <div class="form-feedback-body">
+              <p>${message}</p>
+            </div>
+          </div>`;
+        document.body.appendChild(toast);
+        toast.querySelector(".form-feedback-close").addEventListener("click", () => toast.remove());
+        setTimeout(() => toast.remove(), 6000);
+      }
+
+      async function submitFormData() {
+        if (formLocked) return;
+        setSubmitting(true);
+        const formData = new FormData(formElement);
+        formData.append("ano_letivo", computeAnoLetivo());
+        try {
+          const response = await fetch(SUBMIT_ENDPOINT, {
+            method: "POST",
+            body: formData
+          });
+          if (!response.ok) {
+            throw new Error(`Erro ${response.status || ""}`.trim());
+          }
+          showSubmissionFeedback({
+            success: true,
+            message: "Sua matrícula foi enviada com sucesso."
+          });
+          formElement.reset();
+        } catch (error) {
+          showSubmissionFeedback({
+            success: false,
+            message: "Não foi possível enviar sua matrícula. Tente novamente em instantes."
+          });
+        } finally {
+          setSubmitting(false);
+        }
+      }
+
       function hidePreview() {
         const backdrop = document.getElementById("preview-backdrop");
         backdrop.classList.remove("active");
@@ -3143,7 +3197,7 @@
           const formValid = formElement.checkValidity();
           formElement.classList.add("was-validated");
           if (!formValid) return;
-          showPreview();
+          submitFormData();
         });
 
         formElement.addEventListener("reset", () => {

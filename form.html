@@ -256,13 +256,47 @@
       .nav-tabs .nav-link {
         font-weight: 600;
         color: var(--text-muted);
+        border: none;
+        border-radius: 14px 14px 0 0;
+        padding: 0.65rem 1rem;
+        background: transparent;
       }
 
       .nav-tabs .nav-link.active {
         color: var(--brand-primary);
-        background: #e8f2ff;
-        border-color: #004aad #004aad #e8f2ff;
+        background: linear-gradient(135deg, #e8f2ff 0%, #f5f9ff 100%);
+        border-color: transparent;
         font-weight: 700;
+        box-shadow: 0 4px 10px rgba(0, 74, 173, 0.08);
+      }
+
+      .tab-shell {
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        overflow: hidden;
+        background: #ffffff;
+      }
+
+      .tab-shell .nav-tabs {
+        border-bottom: 1px solid var(--border-color);
+        padding: 0.25rem 0.5rem 0 0.5rem;
+        margin-bottom: 0;
+        gap: 0.35rem;
+        flex-wrap: wrap;
+      }
+
+      .tab-shell .tab-content {
+        background: #ffffff;
+      }
+
+      .tab-shell .tab-pane {
+        padding-top: 1rem;
+      }
+
+      .blurred {
+        filter: blur(4px);
+        pointer-events: none;
+        user-select: none;
       }
 
       .collapsible-form[open] summary {
@@ -634,6 +668,33 @@
         </div>
       </div>
     </main>
+
+    <div
+      class="modal fade"
+      id="screening-modal"
+      tabindex="-1"
+      aria-labelledby="screening-modal-label"
+      aria-hidden="true"
+      data-bs-backdrop="static"
+      data-bs-keyboard="false"
+    >
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="screening-modal-label">Confirmação de aptidão física</h5>
+          </div>
+          <div class="modal-body">
+            <p>
+              Você tem condições de realizar atividades físicas com esforço intenso/ao extremo sem passar mal?
+            </p>
+          </div>
+          <div class="modal-footer d-flex justify-content-end gap-2">
+            <button type="button" class="btn btn-secondary" id="screening-no">Não</button>
+            <button type="button" class="btn btn-primary" id="screening-yes">Sim</button>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <div class="feedback-modal-backdrop" id="preview-backdrop" role="dialog" aria-modal="true" aria-hidden="true">
       <div class="feedback-modal">
@@ -1584,8 +1645,11 @@
       const formElement = document.getElementById("matricula-form");
       const sectionsContainer = document.getElementById("form-sections");
       const tabsContainer = document.createElement("ul");
-      tabsContainer.className = "nav nav-tabs mb-3";
+      tabsContainer.className = "nav nav-tabs";
       tabsContainer.id = "form-tabs";
+      const tabShell = document.createElement("div");
+      tabShell.className = "tab-shell mb-3";
+      const appMain = document.querySelector("main");
       const tabRegistry = new Map();
       const tabOrder = [];
       const fieldRegistry = new Map();
@@ -2127,6 +2191,16 @@
         "dados-turma": "bi-music-note-beamed"
       };
 
+      let screeningInitialized = false;
+
+      function lockForm() {
+        if (appMain) appMain.classList.add("blurred");
+      }
+
+      function unlockForm() {
+        if (appMain) appMain.classList.remove("blurred");
+      }
+
       function setTabVisibility(sectionId, visible) {
         const entry = tabRegistry.get(sectionId);
         if (!entry) return;
@@ -2145,6 +2219,39 @@
             }
           }
         }
+      }
+
+      function initScreeningModal() {
+        if (screeningInitialized) return;
+        screeningInitialized = true;
+        const modalEl = document.getElementById("screening-modal");
+        if (!modalEl) return;
+        const titleEl = modalEl.querySelector(".modal-title");
+        const bodyEl = modalEl.querySelector(".modal-body");
+        const footerEl = modalEl.querySelector(".modal-footer");
+        const btnNo = document.getElementById("screening-no");
+        const btnYes = document.getElementById("screening-yes");
+        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        lockForm();
+        modal.show();
+
+        btnNo?.addEventListener("click", () => {
+          unlockForm();
+          modal.hide();
+        });
+
+        btnYes?.addEventListener("click", () => {
+          lockForm();
+          if (titleEl) titleEl.textContent = "Prática não recomendada para esforço extremo";
+          if (bodyEl)
+            bodyEl.innerHTML =
+              "<p>O frevo é uma atividade aeróbica de alta intensidade, com saltos, deslocamentos rápidos e elevação de frequência cardíaca que exigem preparo cardiorrespiratório robusto.</p>" +
+              "<p>Diretrizes de exercício seguro indicam que quem já sente mal-estar em esforços extremos deve buscar avaliação médica antes de atividades extenuantes. Sem liberação clínica, não é recomendado prosseguir com práticas que impõem alta carga cardiovascular.</p>";
+          if (footerEl) {
+            footerEl.innerHTML =
+              '<button type="button" class="btn btn-secondary" disabled>Formulário bloqueado</button>';
+          }
+        });
       }
 
       function buildTabs(sections) {
@@ -2698,6 +2805,7 @@
         togglePcdFields();
         toggleResponsavelSection();
         handleConditionalFields();
+        initScreeningModal();
         attachEvents();
       }
 

@@ -2124,7 +2124,7 @@
         "dados-saude": "bi-activity",
         "dados-documentos": "bi-folder2-open",
         "dados-responsavel": "bi-people-fill",
-        "dados-turma": "bi-mortarboard-fill"
+        "dados-turma": "bi-music-note-beamed"
       };
 
       function setTabVisibility(sectionId, visible) {
@@ -2149,7 +2149,9 @@
 
       function buildTabs(sections) {
         sections.forEach((section, index) => {
-          const iconClass = sectionIcons[section.id] || "bi-layout-text-window-reverse";
+          const label = section.label?.toLowerCase() || "";
+          let iconClass = sectionIcons[section.id] || "bi-layout-text-window-reverse";
+          if (label.includes("endereço")) iconClass = "bi-house-heart-fill";
           const li = document.createElement("li");
           li.className = "nav-item";
           const button = document.createElement("button");

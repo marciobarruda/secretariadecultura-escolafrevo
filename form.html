@@ -2477,6 +2477,17 @@
         return null;
       }
 
+      function getPreviousVisibleSection(currentId) {
+        const currentIndex = tabOrder.indexOf(currentId);
+        if (currentIndex <= 0) return null;
+        for (let i = currentIndex - 1; i >= 0; i--) {
+          const id = tabOrder[i];
+          const entry = tabRegistry.get(id);
+          if (entry && entry.li.style.display !== "none") return id;
+        }
+        return null;
+      }
+
       function handleAdvance(sectionId) {
         const missing = collectMissingFields(sectionId);
         if (missing.length > 0) {
@@ -2514,7 +2525,13 @@
             backBtn.type = "button";
             backBtn.className = "btn btn-soft back-button";
             backBtn.textContent = "Voltar";
-            backBtn.addEventListener("click", () => window.history.back());
+            backBtn.addEventListener("click", () => {
+              const prevId = getPreviousVisibleSection(section.id);
+              if (prevId) {
+                const prevBtn = tabRegistry.get(prevId)?.button;
+                if (prevBtn) bootstrap.Tab.getOrCreateInstance(prevBtn).show();
+              }
+            });
             leftGroup.appendChild(backBtn);
           }
           const rightGroup = document.createElement("div");

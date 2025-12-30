@@ -2539,6 +2539,7 @@
             fetchNivelOptions(fieldRegistry.get("nivel")?.input?.value || "");
           }
           if (event.target.id === "nivel") {
+            setTurmaOptions([], "");
             fetchTurmaOptions(fieldRegistry.get("turma")?.input?.value || "");
           }
           if (event.target.id === "turma") {

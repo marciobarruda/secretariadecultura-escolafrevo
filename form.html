@@ -253,69 +253,6 @@
         padding-bottom: 1.5rem;
       }
 
-      .nav-tabs .nav-link {
-        font-weight: 600;
-        color: var(--text-muted);
-        border: none;
-        border-radius: 14px 14px 0 0;
-        padding: 0.65rem 1rem;
-        background: transparent;
-      }
-
-      .nav-tabs .nav-link.active {
-        color: var(--brand-primary);
-        background: linear-gradient(135deg, #e8f2ff 0%, #f5f9ff 100%);
-        border-color: transparent;
-        font-weight: 700;
-        box-shadow: 0 4px 10px rgba(0, 74, 173, 0.08);
-      }
-
-      .tab-shell {
-        border: 1px solid var(--border-color);
-        border-radius: 16px;
-        overflow: hidden;
-        background: #ffffff;
-      }
-
-      .tab-shell .nav-tabs {
-        border-bottom: 1px solid var(--border-color);
-        padding: 0.25rem 0.5rem 0 0.5rem;
-        margin-bottom: 0;
-        gap: 0.35rem;
-        flex-wrap: wrap;
-      }
-
-      .tab-shell .tab-content {
-        background: #ffffff;
-      }
-
-      .tab-shell .tab-pane {
-        padding-top: 1rem;
-      }
-
-      .form-guard {
-        position: relative;
-      }
-
-      .form-block-overlay {
-        position: absolute;
-        inset: 0;
-        background: rgba(255, 255, 255, 0.65);
-        backdrop-filter: blur(2px);
-        z-index: 10;
-        display: none;
-      }
-
-      .form-block-overlay.active {
-        display: block;
-      }
-
-      .form-locked {
-        filter: blur(4px);
-        pointer-events: none;
-        user-select: none;
-      }
-
       .collapsible-form[open] summary {
         margin-bottom: 1rem;
         border-bottom-color: rgba(0, 83, 164, 0.25);
@@ -674,7 +611,7 @@
               <div class="card-body">
                 <form id="matricula-form" novalidate class="needs-validation">
                   <div id="form-sections" class="d-flex flex-column gap-4"></div>
-                  <div class="d-flex flex-wrap gap-2 justify-content-end mt-4">
+                  <div class="d-flex flex-wrap gap-2 justify-content-end mt-4 form-actions-global">
                     <button type="reset" class="btn btn-soft">Limpar</button>
                     <button type="submit" class="btn btn-primary">Enviar matrícula</button>
                   </div>
@@ -686,31 +623,6 @@
       </div>
       <div id="form-block-overlay" class="form-block-overlay"></div>
     </main>
-
-    <div
-      class="modal fade"
-      id="screening-modal"
-      tabindex="-1"
-      aria-labelledby="screening-modal-label"
-      aria-hidden="true"
-      data-bs-backdrop="static"
-      data-bs-keyboard="false"
-    >
-      <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="screening-modal-label">Triagem de Saúde – Esforço Físico</h5>
-          </div>
-          <div class="modal-body">
-            <p>Você passa mal ao realizar atividade física que exige esforço físico ao extremo?</p>
-          </div>
-          <div class="modal-footer d-flex justify-content-end gap-2">
-            <button type="button" class="btn btn-primary" id="screening-no">Não</button>
-            <button type="button" class="btn btn-outline-secondary" id="screening-yes">Sim</button>
-          </div>
-        </div>
-      </div>
-    </div>
 
     <div class="feedback-modal-backdrop" id="preview-backdrop" role="dialog" aria-modal="true" aria-hidden="true">
       <div class="feedback-modal">
@@ -1672,11 +1584,6 @@
       const tabOrder = [];
       const fieldRegistry = new Map();
       const statusSlot = document.getElementById("tipo-matricula-slot");
-      const STORAGE_KEY_TRIAGEM = "triagem_esforco_extremo";
-      const CAUTION_REDIRECT_SECONDS = 10;
-      let formLocked = true;
-      let screeningInitialized = false;
-      let cautionCountdownId = null;
       let cepLoadingIndicator = null;
       let lastCepSearched = "";
       let nivelFetchController = null;
@@ -1684,9 +1591,35 @@
       let turmaOptionsCache = [];
 
       const transforms = {
-        digitsOnly: (value) => value.replace(/\\D+/g, ""),
+        digitsOnly: (value) => value.replace(/\D+/g, ""),
         upperCase: (value) => value.toUpperCase(),
         lowerCase: (value) => value.toLowerCase()
+      };
+
+      const deficienciasPorTipo = {
+        auditiva: [
+          { value: "surdos", label: "Surdez total" },
+          { value: "surdos_parcial", label: "Surdez parcial / perda auditiva" },
+          { value: "implante", label: "Usuário de implante ou aparelho auditivo" }
+        ],
+        fisica_motora: [
+          { value: "cadeirante", label: "Usuário de cadeira de rodas" },
+          { value: "amputacao", label: "Amputação ou prótese" },
+          { value: "paralisia", label: "Paralisia ou mobilidade reduzida" },
+          { value: "pcd_motora_outro", label: "Outra condição motora" }
+        ],
+        intelectual: [
+          { value: "intelectual_leve", label: "Deficiência intelectual" },
+          { value: "tea", label: "Transtorno do espectro autista" },
+          { value: "tdah", label: "TDAH / transtornos do neurodesenvolvimento" },
+          { value: "intelectual_outro", label: "Outra condição cognitiva" }
+        ],
+        visao: [
+          { value: "cegueira", label: "Cegueira" },
+          { value: "baixa_visao", label: "Baixa visão" },
+          { value: "campo_visual", label: "Campo visual reduzido" },
+          { value: "visao_outro", label: "Outra condição visual" }
+        ]
       };
 
       const digitOnlyFields = new Set(["cpf", "cpfresponsavel", "cep", "whatsapp", "confirmarWhatsApp"]);
@@ -1836,7 +1769,13 @@
           const showQual = isPcd && tipoEntry?.input?.value && tipoEntry.input.value !== "selecione";
           qualEntry.wrapper.style.display = showQual ? "" : "none";
           qualEntry.input.required = showQual;
-          if (!showQual) clearEntry(qualEntry);
+          if (showQual) {
+            populateQualDeficienciaOptions();
+          } else {
+            clearEntry(qualEntry);
+            qualEntry.input.innerHTML = "";
+            ensureSelectPlaceholder(qualEntry.input);
+          }
         }
       }
 
@@ -2190,6 +2129,26 @@
         toggleResponsavelSection();
       }
 
+      function populateQualDeficienciaOptions() {
+        const tipoValue = (fieldRegistry.get("tipo_def_ask")?.input?.value || "").toLowerCase();
+        const qualEntry = fieldRegistry.get("qual_deficiencia_ask");
+        if (!qualEntry) return;
+        const select = qualEntry.input;
+        const options = deficienciasPorTipo[tipoValue] || [];
+        const previous = select.value;
+        select.innerHTML = "";
+        ensureSelectPlaceholder(select);
+        options.forEach((opt) => {
+          const option = document.createElement("option");
+          option.value = opt.value ?? opt.label ?? opt;
+          option.textContent = opt.label ?? opt.value ?? opt;
+          select.appendChild(option);
+        });
+        if (options.length && options.some((opt) => (opt.value ?? opt.label ?? opt) === previous)) {
+          select.value = previous;
+        }
+      }
+
       function buildSection(section) {
         const sectionContainer = document.createElement("section");
         sectionContainer.className = "tab-pane fade";
@@ -2204,182 +2163,6 @@
         });
         sectionContainer.appendChild(row);
         sectionsContainer.appendChild(sectionContainer);
-      }
-
-      const sectionIcons = {
-        "dados-pessoais": "bi-person-vcard-fill",
-        "dados-saude": "bi-activity",
-        "dados-documentos": "bi-folder2-open",
-        "dados-responsavel": "bi-people-fill",
-        "dados-turma": "bi-music-note-beamed"
-      };
-
-      function setTabVisibility(sectionId, visible) {
-        const entry = tabRegistry.get(sectionId);
-        if (!entry) return;
-        entry.li.style.display = visible ? "" : "none";
-        const pane = document.getElementById(`tab-${sectionId}`);
-        if (!visible) {
-          if (pane) pane.classList.remove("show", "active");
-          if (entry.button.classList.contains("active")) {
-            const nextId = tabOrder.find((id) => {
-              const candidate = tabRegistry.get(id);
-              return candidate && candidate.li.style.display !== "none";
-            });
-            if (nextId) {
-              const nextButton = tabRegistry.get(nextId)?.button;
-              if (nextButton) bootstrap.Tab.getOrCreateInstance(nextButton).show();
-            }
-          }
-        }
-      }
-
-      function applyLockVisual(locking) {
-        if (locking) {
-          formLocked = true;
-          if (appMain) appMain.classList.add("form-locked");
-          if (formBlockOverlay) formBlockOverlay.classList.add("active");
-        } else {
-          formLocked = false;
-          if (appMain) appMain.classList.remove("form-locked");
-          if (formBlockOverlay) formBlockOverlay.classList.remove("active");
-        }
-      }
-
-      function lockForm() {
-        applyLockVisual(true);
-        formElement?.setAttribute("aria-disabled", "true");
-      }
-
-      function unlockForm() {
-        applyLockVisual(false);
-        formElement?.removeAttribute("aria-disabled");
-      }
-
-      function buildTabs(sections) {
-        sections.forEach((section, index) => {
-          const label = section.label?.toLowerCase() || "";
-          let iconClass = sectionIcons[section.id] || "bi-layout-text-window-reverse";
-          if (label.includes("endereço")) iconClass = "bi-house-heart-fill";
-          const li = document.createElement("li");
-          li.className = "nav-item";
-          const button = document.createElement("button");
-          button.className = `nav-link${index === 0 ? " active" : ""}`;
-          button.type = "button";
-          button.setAttribute("data-bs-toggle", "tab");
-          button.setAttribute("data-bs-target", `#tab-${section.id}`);
-          button.setAttribute("aria-controls", `tab-${section.id}`);
-          button.setAttribute("aria-selected", index === 0 ? "true" : "false");
-          button.innerHTML = `<i class="bi ${iconClass} me-2"></i>${section.label}`;
-          button.addEventListener("click", () => {
-            const tabTrigger = new bootstrap.Tab(button);
-            tabTrigger.show();
-          });
-          li.appendChild(button);
-          tabsContainer.appendChild(li);
-          tabRegistry.set(section.id, { li, button });
-          tabOrder.push(section.id);
-        });
-        sectionsContainer.parentElement.insertBefore(tabsContainer, sectionsContainer);
-        sectionsContainer.classList.add("tab-content", "border", "border-top-0", "rounded-bottom", "p-3", "p-md-4");
-      }
-
-      function renderScreeningQuestion(modalInstance) {
-        if (!screeningModalEl) return;
-        const titleEl = screeningModalEl.querySelector(".modal-title");
-        const bodyEl = screeningModalEl.querySelector(".modal-body");
-        const footerEl = screeningModalEl.querySelector(".modal-footer");
-        if (titleEl) titleEl.textContent = "Triagem de Saúde – Esforço Físico";
-        if (bodyEl)
-          bodyEl.innerHTML = "<p>Você passa mal ao realizar atividade física que exige esforço físico ao extremo?</p>";
-        if (footerEl) {
-          footerEl.innerHTML = `
-            <button type="button" class="btn btn-primary" id="screening-no">Não</button>
-            <button type="button" class="btn btn-outline-secondary" id="screening-yes">Sim</button>
-          `;
-          footerEl.querySelector("#screening-no")?.addEventListener("click", () => {
-            try {
-              localStorage.setItem(STORAGE_KEY_TRIAGEM, "no");
-            } catch (e) { /* ignore storage errors */ }
-            unlockForm();
-            modalInstance?.hide();
-          });
-          footerEl.querySelector("#screening-yes")?.addEventListener("click", () => {
-            try {
-              localStorage.setItem(STORAGE_KEY_TRIAGEM, "yes");
-            } catch (e) { /* ignore storage errors */ }
-            lockForm();
-            renderScreeningCaution(modalInstance);
-            modalInstance?.show();
-          });
-        }
-      }
-
-      function renderScreeningCaution(modalInstance) {
-        if (!screeningModalEl) return;
-        const titleEl = screeningModalEl.querySelector(".modal-title");
-        const bodyEl = screeningModalEl.querySelector(".modal-body");
-        const footerEl = screeningModalEl.querySelector(".modal-footer");
-        if (titleEl) titleEl.textContent = "Recomendação Importante de Saúde";
-        if (bodyEl)
-          bodyEl.innerHTML =
-            "<p>O frevo é uma prática de alta intensidade que aumenta bastante a frequência cardíaca e exige condicionamento cardiorrespiratório.</p>" +
-            "<p>Sentir tontura, desmaio ou mal-estar durante esforços extremos é um sinal de alerta: é indicado interromper a atividade e buscar avaliação de um profissional de saúde antes de prosseguir.</p>";
-        if (footerEl) {
-          footerEl.innerHTML = `<div class="text-end text-muted small">Redirecionando em <span id="screening-countdown">${CAUTION_REDIRECT_SECONDS}</span>s...</div>`;
-        }
-        lockForm();
-        if (cautionCountdownId) {
-          clearInterval(cautionCountdownId);
-          cautionCountdownId = null;
-        }
-        const countdownEl = screeningModalEl.querySelector("#screening-countdown");
-        let remaining = CAUTION_REDIRECT_SECONDS;
-        cautionCountdownId = setInterval(() => {
-          remaining -= 1;
-          if (countdownEl) countdownEl.textContent = Math.max(remaining, 0);
-          if (remaining <= 0) {
-            clearInterval(cautionCountdownId);
-            cautionCountdownId = null;
-            window.location.href = "https://escoladefrevo.recife.pe.gov.br/";
-          }
-        }, 1000);
-      }
-
-      function initScreeningModal() {
-        if (screeningInitialized) return;
-        if (!window.bootstrap || !window.bootstrap.Modal) {
-          window.addEventListener("load", initScreeningModal, { once: true });
-          return;
-        }
-        screeningInitialized = true;
-        lockForm();
-        if (!screeningModalEl) return;
-        const modalInstance = bootstrap.Modal.getOrCreateInstance(screeningModalEl, {
-          backdrop: "static",
-          keyboard: false
-        });
-
-        let stored = "";
-        try {
-          stored = localStorage.getItem(STORAGE_KEY_TRIAGEM) || "";
-        } catch (e) {
-          stored = "";
-        }
-
-        if (stored === "no") {
-          unlockForm();
-          return;
-        }
-
-        if (stored === "yes") {
-          renderScreeningCaution(modalInstance);
-          modalInstance.show();
-          return;
-        }
-
-        renderScreeningQuestion(modalInstance);
-        modalInstance.show();
       }
 
       function enforceTransforms(event) {
@@ -2764,6 +2547,59 @@
         backdrop.setAttribute("aria-hidden", "false");
       }
 
+      function setSubmitting(isSubmitting) {
+        const submitBtn = document.getElementById("section-submit-button");
+        if (!submitBtn) return;
+        submitBtn.disabled = isSubmitting || formLocked;
+        submitBtn.innerHTML = isSubmitting
+          ? '<span class="spinner-border spinner-border-sm me-2"></span>Enviando...'
+          : "Enviar matrícula";
+      }
+
+      function showSubmissionFeedback({ success, message }) {
+        const toast = document.createElement("div");
+        toast.className = "form-feedback active";
+        toast.innerHTML = `
+          <div class="form-feedback-dialog">
+            <button class="form-feedback-close" aria-label="Fechar">×</button>
+            <div class="form-feedback-title ${success ? "success" : "alert"}">${success ? "Envio realizado" : "Falha no envio"}</div>
+            <div class="form-feedback-body">
+              <p>${message}</p>
+            </div>
+          </div>`;
+        document.body.appendChild(toast);
+        toast.querySelector(".form-feedback-close").addEventListener("click", () => toast.remove());
+        setTimeout(() => toast.remove(), 6000);
+      }
+
+      async function submitFormData() {
+        if (formLocked) return;
+        setSubmitting(true);
+        const formData = new FormData(formElement);
+        formData.append("ano_letivo", computeAnoLetivo());
+        try {
+          const response = await fetch(SUBMIT_ENDPOINT, {
+            method: "POST",
+            body: formData
+          });
+          if (!response.ok) {
+            throw new Error(`Erro ${response.status || ""}`.trim());
+          }
+          showSubmissionFeedback({
+            success: true,
+            message: "Sua matrícula foi enviada com sucesso."
+          });
+          formElement.reset();
+        } catch (error) {
+          showSubmissionFeedback({
+            success: false,
+            message: "Não foi possível enviar sua matrícula. Tente novamente em instantes."
+          });
+        } finally {
+          setSubmitting(false);
+        }
+      }
+
       function hidePreview() {
         const backdrop = document.getElementById("preview-backdrop");
         backdrop.classList.remove("active");
@@ -2778,20 +2614,6 @@
           enforceTransforms(event);
           enforceExactLength(event.target);
           enforceMatch(event.target);
-          if (event.target.id === "email") {
-            const confirmEmail = fieldRegistry.get("confirmarEmail")?.input;
-            if (confirmEmail) enforceMatch(confirmEmail);
-          }
-          if (event.target.id === "whatsapp") {
-            const confirmWhatsapp = fieldRegistry.get("confirmarWhatsApp")?.input;
-            if (confirmWhatsapp) enforceMatch(confirmWhatsapp);
-          }
-          if (event.target.id === "faixaetaria" || event.target.id === "modalidade") {
-            fetchNivelOptions(fieldRegistry.get("nivel")?.input?.value || "");
-          }
-          if (event.target.id === "nivel") {
-            fetchTurmaOptions(fieldRegistry.get("turma")?.input?.value || "");
-          }
           if (event.target.dataset.readonlyDynamic === "true" && event.target.value === "") {
             event.target.readOnly = false;
           } else if (event.target.dataset.readonlyDynamic === "true" && event.target.value) {
@@ -2810,6 +2632,7 @@
             }
           }
           handleConditionalFields();
+          updateSubmitEnabled();
         });
 
         formElement.addEventListener("change", (event) => {
@@ -2829,6 +2652,7 @@
           if (event.target.id === "pcd_ask" || event.target.id === "tipo_def_ask") togglePcdFields();
           if (event.target.id === "tipo_def_ask") toggleResponsavelSection();
           handleConditionalFields();
+          updateSubmitEnabled();
         });
 
         const birthInput = fieldRegistry.get("datanascimento")?.input;
@@ -2841,7 +2665,6 @@
 
         formElement.addEventListener("submit", (event) => {
           event.preventDefault();
-          if (formLocked) return;
           validateEmails();
           validateWhatsapp();
           const numeroEntry = fieldRegistry.get("numero");
@@ -2849,7 +2672,7 @@
           const formValid = formElement.checkValidity();
           formElement.classList.add("was-validated");
           if (!formValid) return;
-          showPreview();
+          submitFormData();
         });
 
         formElement.addEventListener("reset", () => {
@@ -2899,6 +2722,7 @@
           }
         });
         formElement.id = formConfig.meta.formId || formElement.id;
+        requireAllFields();
         applyPrefillFromJson();
         initializeEmptySelects();
         updateAnoLetivoDisplay();
@@ -2909,6 +2733,8 @@
         handleConditionalFields();
         initScreeningModal();
         attachEvents();
+        addSectionActions();
+        updateSubmitEnabled();
       }
 
       init();

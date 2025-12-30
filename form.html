@@ -790,7 +790,7 @@
         "meta": {
           "formId": "userForm",
           "title": "Secretaria de Cultura • Escola de Frevo",
-          "submitEndpoint": "https://webhook-n8n-dev-conectarecife.recife.pe.gov.br/webhook/efr",
+          "submitEndpoint": "https://webhook-n8n-dev-conectarecife.recife.pe.gov.br/webhook/matriculaefr",
           "notes": [
             "No submit, só são incluídos campos que tenham atributo 'name'.",
             "Campos do tipo file são enviados como '<name>_base64' e '<name>_ext'.",
@@ -1710,7 +1710,7 @@
       const statusSlot = document.getElementById("tipo-matricula-slot");
       const STORAGE_KEY_TRIAGEM = "triagem_esforco_extremo";
       const CAUTION_REDIRECT_SECONDS = 10;
-      const SUBMIT_ENDPOINT = "http://webhook-n8n-automacao.recife/webhook/matriculaefr";
+      const SUBMIT_ENDPOINT = "https://webhook-n8n-dev-conectarecife.recife.pe.gov.br/webhook/matriculaefr";
       let formLocked = true;
       let screeningInitialized = false;
       let cautionCountdownId = null;

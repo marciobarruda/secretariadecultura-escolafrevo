@@ -293,6 +293,29 @@
         padding-top: 1rem;
       }
 
+      .form-guard {
+        position: relative;
+      }
+
+      .form-block-overlay {
+        position: absolute;
+        inset: 0;
+        background: rgba(255, 255, 255, 0.65);
+        backdrop-filter: blur(2px);
+        z-index: 10;
+        display: none;
+      }
+
+      .form-block-overlay.active {
+        display: block;
+      }
+
+      .form-locked {
+        filter: blur(4px);
+        pointer-events: none;
+        user-select: none;
+      }
+
       .collapsible-form[open] summary {
         margin-bottom: 1rem;
         border-bottom-color: rgba(0, 83, 164, 0.25);
@@ -628,7 +651,7 @@
       </div>
     </header>
 
-    <main class="py-5">
+    <main class="py-5 form-guard">
       <div class="container">
         <div class="row justify-content-center">
           <div class="col-xl-10">
@@ -661,7 +684,33 @@
           </div>
         </div>
       </div>
+      <div id="form-block-overlay" class="form-block-overlay"></div>
     </main>
+
+    <div
+      class="modal fade"
+      id="screening-modal"
+      tabindex="-1"
+      aria-labelledby="screening-modal-label"
+      aria-hidden="true"
+      data-bs-backdrop="static"
+      data-bs-keyboard="false"
+    >
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="screening-modal-label">Triagem de Saúde – Esforço Físico</h5>
+          </div>
+          <div class="modal-body">
+            <p>Você passa mal ao realizar atividade física que exige esforço físico ao extremo?</p>
+          </div>
+          <div class="modal-footer d-flex justify-content-end gap-2">
+            <button type="button" class="btn btn-secondary" id="screening-no">Não</button>
+            <button type="button" class="btn btn-primary" id="screening-yes">Sim</button>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <div class="feedback-modal-backdrop" id="preview-backdrop" role="dialog" aria-modal="true" aria-hidden="true">
       <div class="feedback-modal">
@@ -1616,10 +1665,16 @@
       tabsContainer.id = "form-tabs";
       const tabShell = document.createElement("div");
       tabShell.className = "tab-shell mb-3";
+      const appMain = document.querySelector("main.form-guard");
+      const formBlockOverlay = document.getElementById("form-block-overlay");
+      const screeningModalEl = document.getElementById("screening-modal");
       const tabRegistry = new Map();
       const tabOrder = [];
       const fieldRegistry = new Map();
       const statusSlot = document.getElementById("tipo-matricula-slot");
+      const STORAGE_KEY_TRIAGEM = "triagem_esforco_extremo";
+      let formLocked = true;
+      let screeningInitialized = false;
       let cepLoadingIndicator = null;
       let lastCepSearched = "";
       let nivelFetchController = null;
@@ -2177,6 +2232,28 @@
         }
       }
 
+      function applyLockVisual(locking) {
+        if (locking) {
+          formLocked = true;
+          if (appMain) appMain.classList.add("form-locked");
+          if (formBlockOverlay) formBlockOverlay.classList.add("active");
+        } else {
+          formLocked = false;
+          if (appMain) appMain.classList.remove("form-locked");
+          if (formBlockOverlay) formBlockOverlay.classList.remove("active");
+        }
+      }
+
+      function lockForm() {
+        applyLockVisual(true);
+        formElement?.setAttribute("aria-disabled", "true");
+      }
+
+      function unlockForm() {
+        applyLockVisual(false);
+        formElement?.removeAttribute("aria-disabled");
+      }
+
       function buildTabs(sections) {
         sections.forEach((section, index) => {
           const label = section.label?.toLowerCase() || "";
@@ -2203,6 +2280,92 @@
         });
         sectionsContainer.parentElement.insertBefore(tabsContainer, sectionsContainer);
         sectionsContainer.classList.add("tab-content", "border", "border-top-0", "rounded-bottom", "p-3", "p-md-4");
+      }
+
+      function renderScreeningQuestion(modalInstance) {
+        if (!screeningModalEl) return;
+        const titleEl = screeningModalEl.querySelector(".modal-title");
+        const bodyEl = screeningModalEl.querySelector(".modal-body");
+        const footerEl = screeningModalEl.querySelector(".modal-footer");
+        if (titleEl) titleEl.textContent = "Triagem de Saúde – Esforço Físico";
+        if (bodyEl)
+          bodyEl.innerHTML = "<p>Você passa mal ao realizar atividade física que exige esforço físico ao extremo?</p>";
+        if (footerEl) {
+          footerEl.innerHTML = `
+            <button type="button" class="btn btn-secondary" id="screening-no">Não</button>
+            <button type="button" class="btn btn-primary" id="screening-yes">Sim</button>
+          `;
+          footerEl.querySelector("#screening-no")?.addEventListener("click", () => {
+            try {
+              localStorage.setItem(STORAGE_KEY_TRIAGEM, "no");
+            } catch (e) { /* ignore storage errors */ }
+            unlockForm();
+            modalInstance?.hide();
+          });
+          footerEl.querySelector("#screening-yes")?.addEventListener("click", () => {
+            try {
+              localStorage.setItem(STORAGE_KEY_TRIAGEM, "yes");
+            } catch (e) { /* ignore storage errors */ }
+            lockForm();
+            renderScreeningCaution(modalInstance);
+            modalInstance?.show();
+          });
+        }
+      }
+
+      function renderScreeningCaution(modalInstance) {
+        if (!screeningModalEl) return;
+        const titleEl = screeningModalEl.querySelector(".modal-title");
+        const bodyEl = screeningModalEl.querySelector(".modal-body");
+        const footerEl = screeningModalEl.querySelector(".modal-footer");
+        if (titleEl) titleEl.textContent = "Recomendação Importante de Saúde";
+        if (bodyEl)
+          bodyEl.innerHTML =
+            "<p>O frevo é uma prática de alta intensidade que aumenta bastante a frequência cardíaca e exige condicionamento cardiorrespiratório.</p>" +
+            "<p>Sentir tontura, desmaio ou mal-estar durante esforços extremos é um sinal de alerta: é indicado interromper a atividade e buscar avaliação de um profissional de saúde antes de prosseguir.</p>";
+        if (footerEl) {
+          footerEl.innerHTML = `<button type="button" class="btn btn-secondary" id="screening-understood">Entendi</button>`;
+          footerEl.querySelector("#screening-understood")?.addEventListener("click", () => {
+            modalInstance?.show();
+          });
+        }
+        lockForm();
+      }
+
+      function initScreeningModal() {
+        if (screeningInitialized) return;
+        if (!window.bootstrap || !window.bootstrap.Modal) {
+          window.addEventListener("load", initScreeningModal, { once: true });
+          return;
+        }
+        screeningInitialized = true;
+        lockForm();
+        if (!screeningModalEl) return;
+        const modalInstance = bootstrap.Modal.getOrCreateInstance(screeningModalEl, {
+          backdrop: "static",
+          keyboard: false
+        });
+
+        let stored = "";
+        try {
+          stored = localStorage.getItem(STORAGE_KEY_TRIAGEM) || "";
+        } catch (e) {
+          stored = "";
+        }
+
+        if (stored === "no") {
+          unlockForm();
+          return;
+        }
+
+        if (stored === "yes") {
+          renderScreeningCaution(modalInstance);
+          modalInstance.show();
+          return;
+        }
+
+        renderScreeningQuestion(modalInstance);
+        modalInstance.show();
       }
 
       function enforceTransforms(event) {
@@ -2664,6 +2827,7 @@
 
         formElement.addEventListener("submit", (event) => {
           event.preventDefault();
+          if (formLocked) return;
           validateEmails();
           validateWhatsapp();
           const numeroEntry = fieldRegistry.get("numero");
@@ -2711,6 +2875,7 @@
       }
 
       function init() {
+        applyLockVisual(true);
         buildTabs(formConfig.sections);
         formConfig.sections.forEach((section, index) => {
           buildSection(section);
@@ -2728,6 +2893,7 @@
         togglePcdFields();
         toggleResponsavelSection();
         handleConditionalFields();
+        initScreeningModal();
         attachEvents();
       }
 

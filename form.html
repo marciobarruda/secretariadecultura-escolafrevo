@@ -1578,6 +1578,8 @@
       let cepLoadingIndicator = null;
       let lastCepSearched = "";
       let nivelFetchController = null;
+      let turmaFetchController = null;
+      let turmaOptionsCache = [];
 
       const transforms = {
         digitsOnly: (value) => value.replace(/\\D+/g, ""),
@@ -2209,6 +2211,7 @@
 
         if (!tipo && !faixa && !modalidade) {
           setNivelOptions([], requestedValue);
+          fetchTurmaOptions();
           return;
         }
 
@@ -2234,13 +2237,145 @@
           const data = await response.json().catch(() => []);
           const normalized = normalizeNivelOptions(data);
           setNivelOptions(normalized, requestedValue);
+          fetchTurmaOptions();
         } catch (error) {
           if (error.name !== "AbortError") {
             setNivelOptions([], requestedValue);
+            fetchTurmaOptions();
           }
         } finally {
           select.disabled = false;
           nivelFetchController = null;
+        }
+      }
+
+      function normalizeTurmaOptions(data) {
+        const options = [];
+        const pushOption = (item) => {
+          if (!item || typeof item !== "object") return;
+          const value = item.turma ?? item.value ?? item.nome ?? item.name ?? "";
+          const label = item.label ?? item.turma ?? item.nome ?? item.value ?? value;
+          if (!String(value).trim() && !String(label).trim()) return;
+          options.push({
+            value: String(value),
+            label: String(label),
+            dias: item.dias ?? "",
+            horario: item.horario ?? item.hora ?? "",
+            sala: item.sala ?? item.local ?? item.espaco ?? "",
+            professor: item.professor ?? item.prof ?? item.instrutor ?? ""
+          });
+        };
+
+        const processArray = (arr) => arr.forEach((item) => {
+          if (typeof item === "string" || typeof item === "number") {
+            pushOption({ turma: item, label: item });
+          } else {
+            pushOption(item);
+          }
+        });
+
+        if (Array.isArray(data)) {
+          processArray(data);
+        } else if (data && typeof data === "object") {
+          if (Array.isArray(data.options)) processArray(data.options);
+          else if (Array.isArray(data.turmas)) processArray(data.turmas);
+          else if (Array.isArray(data.data)) processArray(data.data);
+        }
+        return options;
+      }
+
+      function setTurmaOptions(options, requestedValue) {
+        const turmaEntry = fieldRegistry.get("turma");
+        if (!turmaEntry) return;
+        const select = turmaEntry.input;
+        const targetValue = requestedValue ?? select.value ?? "";
+        const opts = options && options.length ? options : [{ value: "", label: "Selecione" }];
+        select.innerHTML = "";
+        turmaOptionsCache = opts;
+        let hasTarget = false;
+        opts.forEach((opt) => {
+          const optionEl = document.createElement("option");
+          optionEl.value = opt.value ?? "";
+          optionEl.textContent = opt.label ?? opt.value ?? "";
+          if (optionEl.value === targetValue) hasTarget = true;
+          select.appendChild(optionEl);
+        });
+        if (targetValue && !hasTarget) {
+          const fallbackOption = document.createElement("option");
+          fallbackOption.value = targetValue;
+          fallbackOption.textContent = targetValue;
+          select.appendChild(fallbackOption);
+          select.value = targetValue;
+        } else {
+          select.value = targetValue;
+        }
+        if (!select.value && select.options.length) {
+          select.selectedIndex = 0;
+        }
+        applyTurmaDetails(select.value);
+      }
+
+      function clearTurmaDetails() {
+        ["dias", "horario", "sala", "professor"].forEach((id) => {
+          const entry = fieldRegistry.get(id === "sala" ? "local" : id);
+          if (entry?.input) entry.input.value = "";
+        });
+      }
+
+      function applyTurmaDetails(selectedValue) {
+        const match = turmaOptionsCache.find((opt) => opt.value === selectedValue);
+        if (!match) {
+          clearTurmaDetails();
+          return;
+        }
+        const diasEntry = fieldRegistry.get("dias");
+        const horarioEntry = fieldRegistry.get("horario");
+        const salaEntry = fieldRegistry.get("local");
+        const professorEntry = fieldRegistry.get("professor");
+        if (diasEntry?.input) diasEntry.input.value = match.dias || "";
+        if (horarioEntry?.input) horarioEntry.input.value = match.horario || "";
+        if (salaEntry?.input) salaEntry.input.value = match.sala || "";
+        if (professorEntry?.input) professorEntry.input.value = match.professor || "";
+      }
+
+      async function fetchTurmaOptions(requestedValue) {
+        const turmaEntry = fieldRegistry.get("turma");
+        if (!turmaEntry) return;
+        const select = turmaEntry.input;
+        const faixa = (fieldRegistry.get("faixaetaria")?.input?.value || "").trim();
+        const modalidade = (fieldRegistry.get("modalidade")?.input?.value || "").trim();
+        const nivel = (fieldRegistry.get("nivel")?.input?.value || "").trim();
+
+        if (!faixa || !modalidade || !nivel) {
+          setTurmaOptions([], requestedValue);
+          clearTurmaDetails();
+          return;
+        }
+
+        if (turmaFetchController) turmaFetchController.abort();
+        turmaFetchController = new AbortController();
+        select.disabled = true;
+        setTurmaOptions([{ value: "", label: "Carregando..." }], requestedValue);
+        clearTurmaDetails();
+
+        try {
+          const response = await fetch("https://webhook-n8n-dev-conectarecife.recife.pe.gov.br/webhook/turmas-frevo", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ faixa_etaria: faixa, modalidade, nivel }),
+            signal: turmaFetchController.signal
+          });
+          const data = await response.json().catch(() => []);
+          const normalized = normalizeTurmaOptions(data);
+          setTurmaOptions(normalized, requestedValue);
+        } catch (error) {
+          if (error.name !== "AbortError") {
+            setTurmaOptions([], requestedValue);
+            clearTurmaDetails();
+          }
+        } finally {
+          select.disabled = false;
+          turmaFetchController = null;
         }
       }
 
@@ -2347,6 +2482,9 @@
           if (event.target.id === "faixaetaria" || event.target.id === "modalidade") {
             fetchNivelOptions(fieldRegistry.get("nivel")?.input?.value || "");
           }
+          if (event.target.id === "nivel") {
+            fetchTurmaOptions(fieldRegistry.get("turma")?.input?.value || "");
+          }
           if (event.target.dataset.readonlyDynamic === "true" && event.target.value === "") {
             event.target.readOnly = false;
           } else if (event.target.dataset.readonlyDynamic === "true" && event.target.value) {
@@ -2372,6 +2510,12 @@
           if (event.target.id === "tipoMatricula") setTipoMatriculaValue(event.target.value);
           if (event.target.id === "tipoMatricula" || event.target.id === "faixaetaria" || event.target.id === "modalidade") {
             fetchNivelOptions(fieldRegistry.get("nivel")?.input?.value || "");
+          }
+          if (event.target.id === "nivel") {
+            fetchTurmaOptions(fieldRegistry.get("turma")?.input?.value || "");
+          }
+          if (event.target.id === "turma") {
+            applyTurmaDetails(event.target.value);
           }
           if (event.target.id === "possuirg") toggleDocumentFields();
           if (event.target.id === "pcd_ask" || event.target.id === "tipo_def_ask") togglePcdFields();

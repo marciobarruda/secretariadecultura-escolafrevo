@@ -302,6 +302,10 @@
         padding-top: 1rem;
       }
 
+      #back-button {
+        border-color: #d1d5db;
+      }
+
       .form-guard {
         position: relative;
       }
@@ -681,6 +685,10 @@
                 </div>
               </div>
               <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                  <button type="button" class="btn btn-soft" id="back-button">Voltar</button>
+                  <span></span>
+                </div>
                 <form id="matricula-form" novalidate class="needs-validation">
                   <div id="form-sections" class="d-flex flex-column gap-4"></div>
                   <div class="d-flex flex-wrap gap-2 justify-content-end mt-4 form-actions-global">
@@ -2459,6 +2467,13 @@
         });
       }
 
+      function requireAllFields() {
+        formElement.querySelectorAll("input, select, textarea").forEach((el) => {
+          if (el.type === "hidden") return;
+          el.required = true;
+        });
+      }
+
       function renderScreeningQuestion(modalInstance) {
         if (!screeningModalEl) return;
         const titleEl = screeningModalEl.querySelector(".modal-title");
@@ -3009,6 +3024,10 @@
           updateSubmitEnabled();
         });
 
+        document.getElementById("back-button")?.addEventListener("click", () => {
+          window.history.back();
+        });
+
         const birthInput = fieldRegistry.get("datanascimento")?.input;
         if (birthInput) {
           birthInput.addEventListener("blur", () => {
@@ -3089,6 +3108,7 @@
           }
         });
         formElement.id = formConfig.meta.formId || formElement.id;
+        requireAllFields();
         applyPrefillFromJson();
         initializeEmptySelects();
         updateAnoLetivoDisplay();

@@ -249,6 +249,18 @@
         padding-bottom: 1.5rem;
       }
 
+      .nav-tabs .nav-link {
+        font-weight: 600;
+        color: var(--text-muted);
+      }
+
+      .nav-tabs .nav-link.active {
+        color: var(--brand-primary);
+        background: #e8f2ff;
+        border-color: #004aad #004aad #e8f2ff;
+        font-weight: 700;
+      }
+
       .collapsible-form[open] summary {
         margin-bottom: 1rem;
         border-bottom-color: rgba(0, 83, 164, 0.25);
@@ -1567,6 +1579,8 @@
       const tabsContainer = document.createElement("ul");
       tabsContainer.className = "nav nav-tabs mb-3";
       tabsContainer.id = "form-tabs";
+      const tabRegistry = new Map();
+      const tabOrder = [];
       const fieldRegistry = new Map();
       const statusSlot = document.getElementById("tipo-matricula-slot");
       let cepLoadingIndicator = null;
@@ -2059,6 +2073,7 @@
           }
         });
         sectionElement.style.display = shouldShow ? "" : "none";
+        if (sectionConfig.id) setTabVisibility(sectionConfig.id, shouldShow);
         sectionElement.querySelectorAll("input, select, textarea").forEach((el) => {
           const fieldId = el.id || el.name;
           const entry = fieldRegistry.get(fieldId);
@@ -2105,6 +2120,26 @@
         "dados-turma": "🎓"
       };
 
+      function setTabVisibility(sectionId, visible) {
+        const entry = tabRegistry.get(sectionId);
+        if (!entry) return;
+        entry.li.style.display = visible ? "" : "none";
+        const pane = document.getElementById(`tab-${sectionId}`);
+        if (!visible) {
+          if (pane) pane.classList.remove("show", "active");
+          if (entry.button.classList.contains("active")) {
+            const nextId = tabOrder.find((id) => {
+              const candidate = tabRegistry.get(id);
+              return candidate && candidate.li.style.display !== "none";
+            });
+            if (nextId) {
+              const nextButton = tabRegistry.get(nextId)?.button;
+              if (nextButton) bootstrap.Tab.getOrCreateInstance(nextButton).show();
+            }
+          }
+        }
+      }
+
       function buildTabs(sections) {
         sections.forEach((section, index) => {
           const emoji = sectionEmojis[section.id] || "📋";
@@ -2124,6 +2159,8 @@
           });
           li.appendChild(button);
           tabsContainer.appendChild(li);
+          tabRegistry.set(section.id, { li, button });
+          tabOrder.push(section.id);
         });
         sectionsContainer.parentElement.insertBefore(tabsContainer, sectionsContainer);
         sectionsContainer.classList.add("tab-content", "border", "border-top-0", "rounded-bottom", "p-3", "p-md-4");

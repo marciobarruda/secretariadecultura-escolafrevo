@@ -2253,8 +2253,8 @@
         const options = [];
         const pushOption = (item) => {
           if (!item || typeof item !== "object") return;
-          const value = item.turma ?? item.value ?? item.nome ?? item.name ?? "";
-          const label = item.label ?? item.turma ?? item.nome ?? item.value ?? value;
+          const value = item.turma ?? item.nome_turma ?? item.value ?? item.nome ?? item.name ?? "";
+          const label = item.label ?? item.nome_turma ?? item.turma ?? item.nome ?? item.value ?? value;
           if (!String(value).trim() && !String(label).trim()) return;
           options.push({
             value: String(value),
@@ -2345,6 +2345,8 @@
         const faixa = (fieldRegistry.get("faixaetaria")?.input?.value || "").trim();
         const modalidade = (fieldRegistry.get("modalidade")?.input?.value || "").trim();
         const nivel = (fieldRegistry.get("nivel")?.input?.value || "").trim();
+        const tipo = (fieldRegistry.get("tipoMatricula")?.input?.value || "").trim();
+        const anoLetivo = computeAnoLetivo();
 
         if (!faixa || !modalidade || !nivel) {
           setTurmaOptions([], requestedValue);
@@ -2362,7 +2364,7 @@
           const response = await fetch("https://webhook-n8n-dev-conectarecife.recife.pe.gov.br/webhook/turmas-frevo", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ faixa_etaria: faixa, modalidade, nivel }),
+            body: JSON.stringify({ faixa_etaria: faixa, modalidade, nivel, tipomatricula: tipo, ano_letivo: anoLetivo }),
             signal: turmaFetchController.signal
           });
           const data = await response.json().catch(() => []);

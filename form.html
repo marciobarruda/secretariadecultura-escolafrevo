@@ -127,18 +127,9 @@
         align-items: center;
         gap: 0.5rem;
         font-weight: 700;
-        font-size: 1.1rem;
+        font-size: 1.05rem;
         letter-spacing: 0.02em;
         color: var(--brand-primary);
-      }
-
-      .section-title::before {
-        content: "";
-        display: inline-block;
-        width: 28px;
-        height: 3px;
-        border-radius: 999px;
-        background: var(--brand-highlight);
       }
 
       .card-hero .card-body {
@@ -1573,6 +1564,9 @@
 
       const formElement = document.getElementById("matricula-form");
       const sectionsContainer = document.getElementById("form-sections");
+      const tabsContainer = document.createElement("ul");
+      tabsContainer.className = "nav nav-tabs mb-3";
+      tabsContainer.id = "form-tabs";
       const fieldRegistry = new Map();
       const statusSlot = document.getElementById("tipo-matricula-slot");
       let cepLoadingIndicator = null;
@@ -2089,13 +2083,9 @@
 
       function buildSection(section) {
         const sectionContainer = document.createElement("section");
-        sectionContainer.className = "border rounded-4 p-3 p-md-4 bg-light";
+        sectionContainer.className = "tab-pane fade";
         sectionContainer.dataset.sectionId = section.id;
-
-        const title = document.createElement("div");
-        title.className = "section-title mb-3";
-        title.textContent = section.label;
-        sectionContainer.appendChild(title);
+        sectionContainer.id = `tab-${section.id}`;
 
         const row = document.createElement("div");
         row.className = "row g-3";
@@ -2105,6 +2095,38 @@
         });
         sectionContainer.appendChild(row);
         sectionsContainer.appendChild(sectionContainer);
+      }
+
+      const sectionEmojis = {
+        "dados-pessoais": "👤",
+        "dados-saude": "🏥",
+        "dados-documentos": "📄",
+        "dados-responsavel": "👪",
+        "dados-turma": "🎓"
+      };
+
+      function buildTabs(sections) {
+        sections.forEach((section, index) => {
+          const emoji = sectionEmojis[section.id] || "📋";
+          const li = document.createElement("li");
+          li.className = "nav-item";
+          const button = document.createElement("button");
+          button.className = `nav-link${index === 0 ? " active" : ""}`;
+          button.type = "button";
+          button.setAttribute("data-bs-toggle", "tab");
+          button.setAttribute("data-bs-target", `#tab-${section.id}`);
+          button.setAttribute("aria-controls", `tab-${section.id}`);
+          button.setAttribute("aria-selected", index === 0 ? "true" : "false");
+          button.textContent = `${emoji} ${section.label}`;
+          button.addEventListener("click", () => {
+            const tabTrigger = new bootstrap.Tab(button);
+            tabTrigger.show();
+          });
+          li.appendChild(button);
+          tabsContainer.appendChild(li);
+        });
+        sectionsContainer.parentElement.insertBefore(tabsContainer, sectionsContainer);
+        sectionsContainer.classList.add("tab-content", "border", "border-top-0", "rounded-bottom", "p-3", "p-md-4");
       }
 
       function enforceTransforms(event) {
@@ -2608,7 +2630,14 @@
       }
 
       function init() {
-        formConfig.sections.forEach(buildSection);
+        buildTabs(formConfig.sections);
+        formConfig.sections.forEach((section, index) => {
+          buildSection(section);
+          if (index === 0) {
+            const firstTab = document.getElementById(`tab-${section.id}`);
+            if (firstTab) firstTab.classList.add("show", "active");
+          }
+        });
         formElement.id = formConfig.meta.formId || formElement.id;
         applyPrefillFromJson();
         initializeEmptySelects();

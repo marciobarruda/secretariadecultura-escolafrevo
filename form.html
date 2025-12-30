@@ -705,8 +705,8 @@
             <p>Você passa mal ao realizar atividade física que exige esforço físico ao extremo?</p>
           </div>
           <div class="modal-footer d-flex justify-content-end gap-2">
-            <button type="button" class="btn btn-secondary" id="screening-no">Não</button>
-            <button type="button" class="btn btn-primary" id="screening-yes">Sim</button>
+            <button type="button" class="btn btn-primary" id="screening-no">Não</button>
+            <button type="button" class="btn btn-outline-secondary" id="screening-yes">Sim</button>
           </div>
         </div>
       </div>
@@ -2294,8 +2294,8 @@
           bodyEl.innerHTML = "<p>Você passa mal ao realizar atividade física que exige esforço físico ao extremo?</p>";
         if (footerEl) {
           footerEl.innerHTML = `
-            <button type="button" class="btn btn-secondary" id="screening-no">Não</button>
-            <button type="button" class="btn btn-primary" id="screening-yes">Sim</button>
+            <button type="button" class="btn btn-primary" id="screening-no">Não</button>
+            <button type="button" class="btn btn-outline-secondary" id="screening-yes">Sim</button>
           `;
           footerEl.querySelector("#screening-no")?.addEventListener("click", () => {
             try {

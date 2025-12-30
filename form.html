@@ -608,6 +608,7 @@
                     <h2 class="card-title mb-1">Escola de Frevo do Recife</h2>
                     <p class="card-subtitle mb-0">
                       Insira seus dados pessoais, endereço, informações de saúde e anexe a documentação solicitada.
+                      <span class="text-primary fw-semibold ms-2">• Ano letivo <span id="ano-letivo-display">—</span></span>
                     </p>
                   </div>
                   <div id="tipo-matricula-slot" class="d-flex align-items-start justify-content-end"></div>
@@ -2222,6 +2223,11 @@
         return month >= 11 ? now.getFullYear() + 1 : now.getFullYear();
       }
 
+      function updateAnoLetivoDisplay() {
+        const badge = document.getElementById("ano-letivo-display");
+        if (badge) badge.textContent = computeAnoLetivo();
+      }
+
       function normalizeNivelOptions(data) {
         const options = [];
         const pushOption = (value, label) => {
@@ -2678,6 +2684,7 @@
         formElement.id = formConfig.meta.formId || formElement.id;
         applyPrefillFromJson();
         initializeEmptySelects();
+        updateAnoLetivoDisplay();
         setTipoMatriculaValue(fieldRegistry.get("tipoMatricula")?.input?.value || "");
         toggleDocumentFields();
         togglePcdFields();

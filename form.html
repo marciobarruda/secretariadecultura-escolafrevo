@@ -1673,8 +1673,10 @@
       const fieldRegistry = new Map();
       const statusSlot = document.getElementById("tipo-matricula-slot");
       const STORAGE_KEY_TRIAGEM = "triagem_esforco_extremo";
+      const CAUTION_REDIRECT_SECONDS = 10;
       let formLocked = true;
       let screeningInitialized = false;
+      let cautionCountdownId = null;
       let cepLoadingIndicator = null;
       let lastCepSearched = "";
       let nivelFetchController = null;
@@ -2324,12 +2326,24 @@
             "<p>O frevo é uma prática de alta intensidade que aumenta bastante a frequência cardíaca e exige condicionamento cardiorrespiratório.</p>" +
             "<p>Sentir tontura, desmaio ou mal-estar durante esforços extremos é um sinal de alerta: é indicado interromper a atividade e buscar avaliação de um profissional de saúde antes de prosseguir.</p>";
         if (footerEl) {
-          footerEl.innerHTML = `<button type="button" class="btn btn-secondary" id="screening-understood">Entendi</button>`;
-          footerEl.querySelector("#screening-understood")?.addEventListener("click", () => {
-            modalInstance?.show();
-          });
+          footerEl.innerHTML = `<div class="text-end text-muted small">Redirecionando em <span id="screening-countdown">${CAUTION_REDIRECT_SECONDS}</span>s...</div>`;
         }
         lockForm();
+        if (cautionCountdownId) {
+          clearInterval(cautionCountdownId);
+          cautionCountdownId = null;
+        }
+        const countdownEl = screeningModalEl.querySelector("#screening-countdown");
+        let remaining = CAUTION_REDIRECT_SECONDS;
+        cautionCountdownId = setInterval(() => {
+          remaining -= 1;
+          if (countdownEl) countdownEl.textContent = Math.max(remaining, 0);
+          if (remaining <= 0) {
+            clearInterval(cautionCountdownId);
+            cautionCountdownId = null;
+            window.location.href = "https://escoladefrevo.recife.pe.gov.br/";
+          }
+        }, 1000);
       }
 
       function initScreeningModal() {

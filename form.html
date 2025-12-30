@@ -3074,6 +3074,7 @@
         setSubmitting(true);
         const formData = new FormData(formElement);
         formData.append("ano_letivo", computeAnoLetivo());
+        formData.append("tipomatricula", fieldRegistry.get("tipoMatricula")?.input?.value || "");
         try {
           const response = await fetch(SUBMIT_ENDPOINT, {
             method: "POST",

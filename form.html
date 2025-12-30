@@ -1721,9 +1721,35 @@
       let turmaOptionsCache = [];
 
       const transforms = {
-        digitsOnly: (value) => value.replace(/\\D+/g, ""),
+        digitsOnly: (value) => value.replace(/\D+/g, ""),
         upperCase: (value) => value.toUpperCase(),
         lowerCase: (value) => value.toLowerCase()
+      };
+
+      const deficienciasPorTipo = {
+        auditiva: [
+          { value: "surdos", label: "Surdez total" },
+          { value: "surdos_parcial", label: "Surdez parcial / perda auditiva" },
+          { value: "implante", label: "Usuário de implante ou aparelho auditivo" }
+        ],
+        fisica_motora: [
+          { value: "cadeirante", label: "Usuário de cadeira de rodas" },
+          { value: "amputacao", label: "Amputação ou prótese" },
+          { value: "paralisia", label: "Paralisia ou mobilidade reduzida" },
+          { value: "pcd_motora_outro", label: "Outra condição motora" }
+        ],
+        intelectual: [
+          { value: "intelectual_leve", label: "Deficiência intelectual" },
+          { value: "tea", label: "Transtorno do espectro autista" },
+          { value: "tdah", label: "TDAH / transtornos do neurodesenvolvimento" },
+          { value: "intelectual_outro", label: "Outra condição cognitiva" }
+        ],
+        visao: [
+          { value: "cegueira", label: "Cegueira" },
+          { value: "baixa_visao", label: "Baixa visão" },
+          { value: "campo_visual", label: "Campo visual reduzido" },
+          { value: "visao_outro", label: "Outra condição visual" }
+        ]
       };
 
       const digitOnlyFields = new Set(["cpf", "cpfresponsavel", "cep", "whatsapp", "confirmarWhatsApp"]);
@@ -1873,7 +1899,13 @@
           const showQual = isPcd && tipoEntry?.input?.value && tipoEntry.input.value !== "selecione";
           qualEntry.wrapper.style.display = showQual ? "" : "none";
           qualEntry.input.required = showQual;
-          if (!showQual) clearEntry(qualEntry);
+          if (showQual) {
+            populateQualDeficienciaOptions();
+          } else {
+            clearEntry(qualEntry);
+            qualEntry.input.innerHTML = "";
+            ensureSelectPlaceholder(qualEntry.input);
+          }
         }
       }
 
@@ -2227,6 +2259,26 @@
         toggleResponsavelSection();
       }
 
+      function populateQualDeficienciaOptions() {
+        const tipoValue = (fieldRegistry.get("tipo_def_ask")?.input?.value || "").toLowerCase();
+        const qualEntry = fieldRegistry.get("qual_deficiencia_ask");
+        if (!qualEntry) return;
+        const select = qualEntry.input;
+        const options = deficienciasPorTipo[tipoValue] || [];
+        const previous = select.value;
+        select.innerHTML = "";
+        ensureSelectPlaceholder(select);
+        options.forEach((opt) => {
+          const option = document.createElement("option");
+          option.value = opt.value ?? opt.label ?? opt;
+          option.textContent = opt.label ?? opt.value ?? opt;
+          select.appendChild(option);
+        });
+        if (options.length && options.some((opt) => (opt.value ?? opt.label ?? opt) === previous)) {
+          select.value = previous;
+        }
+      }
+
       function buildSection(section) {
         const sectionContainer = document.createElement("section");
         sectionContainer.className = "tab-pane fade";
@@ -2341,6 +2393,18 @@
         return !value;
       }
 
+      function getFieldLabel(el) {
+        if (!el) return "";
+        const id = el.id;
+        if (id) {
+          const explicit = document.querySelector(`label[for="${id}"]`);
+          if (explicit?.textContent) return explicit.textContent.trim();
+        }
+        const wrapperLabel = el.closest("[data-field-id]")?.querySelector("label");
+        if (wrapperLabel?.textContent) return wrapperLabel.textContent.trim();
+        return el.name || el.id || "Campo obrigatório";
+      }
+
       function markFieldInvalid(el) {
         if (!el) return;
         el.classList.add("is-invalid");
@@ -2367,8 +2431,7 @@
           const invalid = !el.checkValidity() || isEmptyValue(el);
           if (invalid) {
             markFieldInvalid(el);
-            const label = el.closest(".form-group")?.querySelector("label")?.textContent?.trim() || el.name || el.id;
-            missing.push({ element: el, label });
+            missing.push({ element: el, label: getFieldLabel(el) });
           } else {
             clearFieldInvalid(el);
           }

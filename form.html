@@ -1803,6 +1803,28 @@
         toggleResponsavelSection();
       }
 
+      function ensureSelectPlaceholder(select, placeholderText = "Selecione") {
+        if (!select || select.value) return;
+        const options = Array.from(select.options);
+        const emptyIndex = options.findIndex((opt) => (opt.value ?? "") === "");
+        if (emptyIndex >= 0) {
+          if (!options[emptyIndex].textContent.trim()) {
+            options[emptyIndex].textContent = placeholderText;
+          }
+          select.selectedIndex = emptyIndex;
+          return;
+        }
+        const placeholder = document.createElement("option");
+        placeholder.value = "";
+        placeholder.textContent = placeholderText;
+        select.insertBefore(placeholder, select.firstChild);
+        select.selectedIndex = 0;
+      }
+
+      function initializeEmptySelects() {
+        document.querySelectorAll("select").forEach((select) => ensureSelectPlaceholder(select));
+      }
+
       function createOptionElements(options, targetSelect) {
         targetSelect.innerHTML = "";
         options.forEach((opt) => {
@@ -1877,6 +1899,7 @@
           if (Array.isArray(field.options)) {
             createOptionElements(field.options, input);
           }
+          ensureSelectPlaceholder(input);
         } else if (field.type === "textarea") {
           input = document.createElement("textarea");
           input.className = "form-control";
@@ -2198,6 +2221,7 @@
         if (!select.value && select.options.length) {
           select.selectedIndex = 0;
         }
+        ensureSelectPlaceholder(select);
       }
 
       async function fetchNivelOptions(requestedValue) {
@@ -2313,6 +2337,7 @@
           select.selectedIndex = 0;
         }
         applyTurmaDetails(select.value);
+        ensureSelectPlaceholder(select);
       }
 
       function clearTurmaDetails() {
@@ -2585,6 +2610,7 @@
         formConfig.sections.forEach(buildSection);
         formElement.id = formConfig.meta.formId || formElement.id;
         applyPrefillFromJson();
+        initializeEmptySelects();
         setTipoMatriculaValue(fieldRegistry.get("tipoMatricula")?.input?.value || "");
         toggleDocumentFields();
         togglePcdFields();

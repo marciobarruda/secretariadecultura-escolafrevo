@@ -931,7 +931,7 @@
                 "placeholder": null,
                 "valueTemplate": null,
                 "required": false,
-                "readOnly": false,
+                "readOnly": true,
                 "options": null,
                 "validation": null,
                 "dynamic": {
@@ -3016,6 +3016,18 @@
         }
       }
 
+      function setFaixaEtariaByAge(age) {
+        const faixaEntry = fieldRegistry.get("faixaetaria");
+        if (!faixaEntry?.input) return;
+        let faixa = "";
+        if (age > 6 && age <= 11) faixa = "6 A 11 ANOS";
+        else if (age > 11 && age <= 17) faixa = "12 A 17 ANOS";
+        else if (age > 18 && age <= 49) faixa = "18 A 49 ANOS";
+        else if (age > 49) faixa = "50+";
+        faixaEntry.input.value = faixa;
+        ["input", "change"].forEach((t) => faixaEntry.input.dispatchEvent(new Event(t, { bubbles: true })));
+      }
+
       function computeAge() {
         const birthEntry = fieldRegistry.get("datanascimento");
         const ageEntry = fieldRegistry.get("idade");
@@ -3023,6 +3035,7 @@
         const birthDate = birthEntry.input.value ? new Date(birthEntry.input.value) : null;
         if (!birthDate || Number.isNaN(birthDate.getTime())) {
           ageEntry.input.value = "";
+          setFaixaEtariaByAge(0);
           return;
         }
         const today = new Date();
@@ -3032,6 +3045,7 @@
           age--;
         }
         ageEntry.input.value = age;
+        setFaixaEtariaByAge(age);
       }
 
       function collectPreviewData() {

@@ -787,15 +787,23 @@
 
     <div class="modal fade" id="availability-modal" tabindex="-1" aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">Disponibilidade do formulário</h5>
+        <div class="modal-content border-0 shadow-lg">
+          <div class="modal-header bg-gradient" style="background: linear-gradient(135deg, #0d6efd, #31d2f2);">
+            <h5 class="modal-title text-white">⏳ Disponibilidade — Oficina de Férias 2027</h5>
           </div>
           <div class="modal-body">
-            <p>O formulário ficará disponível de <strong>30/12/2025 às 21:30</strong> até <strong>07/01/2026 às 14:00</strong>.</p>
-            <p>Contagem regressiva para abertura:</p>
-            <div class="h4 mb-0"><span id="availability-countdown">--:--:--</span></div>
-            <p class="text-muted mb-0" id="availability-status"></p>
+            <div class="d-flex align-items-center gap-3 mb-3">
+              <div class="display-6">🎉</div>
+              <div>
+                <p class="mb-1 fw-semibold text-primary">Matrículas para a Oficina de Férias 2027</p>
+                <p class="mb-0">Disponível de <strong>30/12/2025 às 21:30</strong> até <strong>07/01/2026 às 14:00</strong>.</p>
+              </div>
+            </div>
+            <div class="p-3 rounded-3 bg-light border">
+              <p class="mb-1 fw-semibold text-secondary">Abertura em:</p>
+              <div class="h4 mb-1 text-primary"><span id="availability-countdown">--:--:--</span></div>
+              <p class="text-muted mb-0" id="availability-status"></p>
+            </div>
           </div>
         </div>
       </div>
@@ -1735,6 +1743,7 @@
       let cautionCountdownId = null;
       let availabilityCountdownId = null;
       let submissionRedirectId = null;
+      let availabilityModalPending = false;
       let pendingModalInstance = null;
       let cepLoadingIndicator = null;
       let lastCepSearched = "";
@@ -3154,7 +3163,17 @@
 
       function showAvailabilityModal() {
         const modalEl = document.getElementById("availability-modal");
-        if (!modalEl || !window.bootstrap?.Modal) return;
+        if (!modalEl) return;
+        if (!window.bootstrap?.Modal) {
+          if (!availabilityModalPending) {
+            availabilityModalPending = true;
+            window.addEventListener("load", () => {
+              availabilityModalPending = false;
+              showAvailabilityModal();
+            }, { once: true });
+          }
+          return;
+        }
         const modalInstance = bootstrap.Modal.getOrCreateInstance(modalEl, {
           backdrop: "static",
           keyboard: false

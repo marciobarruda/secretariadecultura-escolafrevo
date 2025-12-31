@@ -785,6 +785,22 @@
       </div>
     </div>
 
+    <div class="modal fade" id="availability-modal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Disponibilidade do formulário</h5>
+          </div>
+          <div class="modal-body">
+            <p>O formulário ficará disponível de <strong>30/12/2025 às 21:30</strong> até <strong>07/01/2026 às 14:00</strong>.</p>
+            <p>Contagem regressiva para abertura:</p>
+            <div class="h4 mb-0"><span id="availability-countdown">--:--:--</span></div>
+            <p class="text-muted mb-0" id="availability-status"></p>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <script>
       const formConfig = {
         "meta": {
@@ -1710,10 +1726,15 @@
       const statusSlot = document.getElementById("tipo-matricula-slot");
       const STORAGE_KEY_TRIAGEM = "triagem_esforco_extremo";
       const CAUTION_REDIRECT_SECONDS = 10;
+      const SUBMISSION_REDIRECT_SECONDS = 6;
+      const WINDOW_START = new Date("2025-12-30T21:30:00");
+      const WINDOW_END = new Date("2026-01-07T14:00:00");
       const SUBMIT_ENDPOINT = "https://webhook-n8n-dev-conectarecife.recife.pe.gov.br/webhook/matriculaefr";
       let formLocked = true;
       let screeningInitialized = false;
       let cautionCountdownId = null;
+      let availabilityCountdownId = null;
+      let submissionRedirectId = null;
       let pendingModalInstance = null;
       let cepLoadingIndicator = null;
       let lastCepSearched = "";
@@ -3054,6 +3075,10 @@
       }
 
       function showSubmissionFeedback({ success, message }) {
+        if (submissionRedirectId) {
+          clearInterval(submissionRedirectId);
+          submissionRedirectId = null;
+        }
         const toast = document.createElement("div");
         toast.className = "form-feedback active";
         toast.innerHTML = `
@@ -3062,11 +3087,29 @@
             <div class="form-feedback-title ${success ? "success" : "alert"}">${success ? "Envio realizado" : "Falha no envio"}</div>
             <div class="form-feedback-body">
               <p>${message}</p>
+              <p class="mb-0 text-muted">Redirecionando em <span id="submit-countdown">${SUBMISSION_REDIRECT_SECONDS}</span>s...</p>
             </div>
           </div>`;
         document.body.appendChild(toast);
-        toast.querySelector(".form-feedback-close").addEventListener("click", () => toast.remove());
-        setTimeout(() => toast.remove(), 6000);
+        const closeBtn = toast.querySelector(".form-feedback-close");
+        const countdownEl = toast.querySelector("#submit-countdown");
+        const redirect = () => {
+          window.location.href = "https://escoladefrevo.recife.pe.gov.br/";
+        };
+        closeBtn.addEventListener("click", () => {
+          if (submissionRedirectId) clearInterval(submissionRedirectId);
+          redirect();
+        });
+        let remaining = SUBMISSION_REDIRECT_SECONDS;
+        submissionRedirectId = setInterval(() => {
+          remaining -= 1;
+          if (countdownEl) countdownEl.textContent = Math.max(remaining, 0);
+          if (remaining <= 0) {
+            clearInterval(submissionRedirectId);
+            submissionRedirectId = null;
+            redirect();
+          }
+        }, 1000);
       }
 
       async function submitFormData() {
@@ -3102,6 +3145,63 @@
         } finally {
           setSubmitting(false);
         }
+      }
+
+      function isWithinActiveWindow() {
+        const now = new Date();
+        return now >= WINDOW_START && now <= WINDOW_END;
+      }
+
+      function showAvailabilityModal() {
+        const modalEl = document.getElementById("availability-modal");
+        if (!modalEl || !window.bootstrap?.Modal) return;
+        const modalInstance = bootstrap.Modal.getOrCreateInstance(modalEl, {
+          backdrop: "static",
+          keyboard: false
+        });
+        const countdownEl = modalEl.querySelector("#availability-countdown");
+        const statusEl = modalEl.querySelector("#availability-status");
+        if (availabilityCountdownId) {
+          clearInterval(availabilityCountdownId);
+          availabilityCountdownId = null;
+        }
+
+        const updateCountdown = () => {
+          const now = new Date();
+          if (now >= WINDOW_END) {
+            if (statusEl) statusEl.textContent = "Período encerrado.";
+            if (countdownEl) countdownEl.textContent = "00:00:00";
+            return false;
+          }
+          if (now >= WINDOW_START) {
+            modalInstance.hide();
+            initScreeningModal();
+            return false;
+          }
+          const diff = WINDOW_START.getTime() - now.getTime();
+          const hours = Math.floor(diff / 1000 / 60 / 60);
+          const minutes = Math.floor((diff / 1000 / 60) % 60);
+          const seconds = Math.floor((diff / 1000) % 60);
+          if (countdownEl) {
+            countdownEl.textContent = `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+          }
+          return true;
+        };
+
+        if (!updateCountdown()) {
+          modalInstance.show();
+          return;
+        }
+
+        availabilityCountdownId = setInterval(() => {
+          const keep = updateCountdown();
+          if (!keep && availabilityCountdownId) {
+            clearInterval(availabilityCountdownId);
+            availabilityCountdownId = null;
+          }
+        }, 1000);
+
+        modalInstance.show();
       }
 
       function hidePreview() {
@@ -3263,7 +3363,11 @@
         togglePcdFields();
         toggleResponsavelSection();
         handleConditionalFields();
-        initScreeningModal();
+        if (isWithinActiveWindow()) {
+          initScreeningModal();
+        } else {
+          showAvailabilityModal();
+        }
         attachEvents();
         addSectionActions();
         updateSubmitEnabled();

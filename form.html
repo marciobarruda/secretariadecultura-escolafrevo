@@ -253,6 +253,82 @@
         padding-bottom: 1.5rem;
       }
 
+      .nav-tabs .nav-link {
+        font-weight: 600;
+        color: var(--text-muted);
+        border: none;
+        border-radius: 14px 14px 0 0;
+        padding: 0.65rem 1rem;
+        background: transparent;
+      }
+
+      .nav-tabs .nav-link.active {
+        color: var(--brand-primary);
+        background: linear-gradient(135deg, #e8f2ff 0%, #f5f9ff 100%);
+        border-color: transparent;
+        font-weight: 700;
+        box-shadow: 0 4px 10px rgba(0, 74, 173, 0.08);
+      }
+
+      .tab-shell {
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        overflow: hidden;
+        background: #ffffff;
+      }
+
+      .tab-shell .nav-tabs {
+        border-bottom: 1px solid var(--border-color);
+        padding: 0.25rem 0.5rem 0 0.5rem;
+        margin-bottom: 0;
+        gap: 0.35rem;
+        flex-wrap: wrap;
+      }
+
+      .tab-shell .tab-content {
+        background: #ffffff;
+      }
+
+      .tab-shell .tab-pane {
+        padding-top: 1rem;
+      }
+
+      .form-actions-global {
+        display: none !important;
+      }
+
+      .section-actions {
+        border-top: 1px solid rgba(0, 74, 173, 0.1);
+        padding-top: 1rem;
+      }
+
+      .back-button {
+        border-color: #d1d5db;
+      }
+
+      .form-guard {
+        position: relative;
+      }
+
+      .form-block-overlay {
+        position: absolute;
+        inset: 0;
+        background: rgba(255, 255, 255, 0.65);
+        backdrop-filter: blur(2px);
+        z-index: 10;
+        display: none;
+      }
+
+      .form-block-overlay.active {
+        display: block;
+      }
+
+      .form-locked {
+        filter: blur(4px);
+        pointer-events: none;
+        user-select: none;
+      }
+
       .collapsible-form[open] summary {
         margin-bottom: 1rem;
         border-bottom-color: rgba(0, 83, 164, 0.25);
@@ -624,6 +700,54 @@
       <div id="form-block-overlay" class="form-block-overlay"></div>
     </main>
 
+    <div
+      class="modal fade"
+      id="screening-modal"
+      tabindex="-1"
+      aria-labelledby="screening-modal-label"
+      aria-hidden="true"
+      data-bs-backdrop="static"
+      data-bs-keyboard="false"
+    >
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="screening-modal-label">Triagem de Saúde – Esforço Físico</h5>
+          </div>
+          <div class="modal-body">
+            <p>Você passa mal ao realizar atividade física que exige esforço físico ao extremo?</p>
+          </div>
+          <div class="modal-footer d-flex justify-content-end gap-2">
+            <button type="button" class="btn btn-primary" id="screening-no">Não</button>
+            <button type="button" class="btn btn-outline-secondary" id="screening-yes">Sim</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div
+      class="modal fade"
+      id="pending-modal"
+      tabindex="-1"
+      aria-labelledby="pending-modal-label"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="pending-modal-label">Campos obrigatórios pendentes</h5>
+          </div>
+          <div class="modal-body">
+            <p>Preencha os campos a seguir para avançar:</p>
+            <ul id="pending-fields-list" class="mb-0"></ul>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Ok</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="feedback-modal-backdrop" id="preview-backdrop" role="dialog" aria-modal="true" aria-hidden="true">
       <div class="feedback-modal">
         <div class="feedback-modal-header">
@@ -661,12 +785,36 @@
       </div>
     </div>
 
+    <div class="modal fade" id="availability-modal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+          <div class="modal-header bg-gradient" style="background: linear-gradient(135deg, #0d6efd, #31d2f2);">
+            <h5 class="modal-title text-white">⏳ Disponibilidade — Oficina de Férias 2026</h5>
+          </div>
+          <div class="modal-body">
+            <div class="d-flex align-items-center gap-3 mb-3">
+              <div class="display-6">🎉</div>
+              <div>
+                <p class="mb-1 fw-semibold text-primary">Matrículas Ano Letivo 2026</p>
+                <p class="mb-0">Disponível de <strong>{{ $json.window_start.split('T')[0].split('-').reverse().join('/') + ' às ' + $json.window_start.split('T')[1].substring(0,5) }}</strong> até <strong>{{ $json.window_end.split('T')[0].split('-').reverse().join('/') + ' às ' + $json.window_end.split('T')[1].substring(0,5) }}</strong>.</p>
+              </div>
+            </div>
+            <div class="p-3 rounded-3 bg-light border">
+              <p class="mb-1 fw-semibold text-secondary">Abertura em:</p>
+              <div class="h4 mb-1 text-primary"><span id="availability-countdown">--:--:--</span></div>
+              <p class="text-muted mb-0" id="availability-status"></p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <script>
       const formConfig = {
         "meta": {
           "formId": "userForm",
           "title": "Secretaria de Cultura • Escola de Frevo",
-          "submitEndpoint": "https://webhook-n8n-dev-conectarecife.recife.pe.gov.br/webhook/efr",
+          "submitEndpoint": "https://webhook-n8n-dev-conectarecife.recife.pe.gov.br/webhook/matriculaefr",
           "notes": [
             "No submit, só são incluídos campos que tenham atributo 'name'.",
             "Campos do tipo file são enviados como '<name>_base64' e '<name>_ext'.",
@@ -783,7 +931,7 @@
                 "placeholder": null,
                 "valueTemplate": null,
                 "required": false,
-                "readOnly": false,
+                "readOnly": true,
                 "options": null,
                 "validation": null,
                 "dynamic": {
@@ -1584,6 +1732,19 @@
       const tabOrder = [];
       const fieldRegistry = new Map();
       const statusSlot = document.getElementById("tipo-matricula-slot");
+      const STORAGE_KEY_TRIAGEM = "triagem_esforco_extremo";
+      const CAUTION_REDIRECT_SECONDS = 10;
+      const SUBMISSION_REDIRECT_SECONDS = 6;
+      const WINDOW_START = new Date("{{ $json.window_start }}");
+      const WINDOW_END = new Date("{{ $json.window_end }}");
+      const SUBMIT_ENDPOINT = "https://webhook-n8n-dev-conectarecife.recife.pe.gov.br/webhook/matriculaefr";
+      let formLocked = true;
+      let screeningInitialized = false;
+      let cautionCountdownId = null;
+      let availabilityCountdownId = null;
+      let submissionRedirectId = null;
+      let availabilityModalPending = false;
+      let pendingModalInstance = null;
       let cepLoadingIndicator = null;
       let lastCepSearched = "";
       let nivelFetchController = null;
@@ -2165,6 +2326,372 @@
         sectionsContainer.appendChild(sectionContainer);
       }
 
+      const sectionIcons = {
+        "dados-pessoais": "bi-person-vcard-fill",
+        "dados-saude": "bi-activity",
+        "dados-documentos": "bi-folder2-open",
+        "dados-responsavel": "bi-people-fill",
+        "dados-turma": "bi-music-note-beamed"
+      };
+
+      function setTabVisibility(sectionId, visible) {
+        const entry = tabRegistry.get(sectionId);
+        if (!entry) return;
+        entry.li.style.display = visible ? "" : "none";
+        const pane = document.getElementById(`tab-${sectionId}`);
+        if (!visible) {
+          if (pane) pane.classList.remove("show", "active");
+          if (entry.button.classList.contains("active")) {
+            const nextId = tabOrder.find((id) => {
+              const candidate = tabRegistry.get(id);
+              return candidate && candidate.li.style.display !== "none";
+            });
+            if (nextId) {
+              const nextButton = tabRegistry.get(nextId)?.button;
+              if (nextButton) bootstrap.Tab.getOrCreateInstance(nextButton).show();
+            }
+          }
+        }
+      }
+
+      function applyLockVisual(locking) {
+        if (locking) {
+          formLocked = true;
+          if (appMain) appMain.classList.add("form-locked");
+          if (formBlockOverlay) formBlockOverlay.classList.add("active");
+        } else {
+          formLocked = false;
+          if (appMain) appMain.classList.remove("form-locked");
+          if (formBlockOverlay) formBlockOverlay.classList.remove("active");
+        }
+      }
+
+      function lockForm() {
+        applyLockVisual(true);
+        formElement?.setAttribute("aria-disabled", "true");
+      }
+
+      function unlockForm() {
+        applyLockVisual(false);
+        formElement?.removeAttribute("aria-disabled");
+      }
+
+      function buildTabs(sections) {
+        sections.forEach((section, index) => {
+          const label = section.label?.toLowerCase() || "";
+          let iconClass = sectionIcons[section.id] || "bi-layout-text-window-reverse";
+          if (label.includes("endereço")) iconClass = "bi-house-heart-fill";
+          const li = document.createElement("li");
+          li.className = "nav-item";
+          const button = document.createElement("button");
+          button.className = `nav-link${index === 0 ? " active" : ""}`;
+          button.type = "button";
+          button.setAttribute("data-bs-toggle", "tab");
+          button.setAttribute("data-bs-target", `#tab-${section.id}`);
+          button.setAttribute("aria-controls", `tab-${section.id}`);
+          button.setAttribute("aria-selected", index === 0 ? "true" : "false");
+          button.innerHTML = `<i class="bi ${iconClass} me-2"></i>${section.label}`;
+          button.addEventListener("click", () => {
+            const tabTrigger = new bootstrap.Tab(button);
+            tabTrigger.show();
+          });
+          li.appendChild(button);
+          tabsContainer.appendChild(li);
+          tabRegistry.set(section.id, { li, button });
+          tabOrder.push(section.id);
+        });
+        sectionsContainer.parentElement.insertBefore(tabsContainer, sectionsContainer);
+        sectionsContainer.classList.add("tab-content", "border", "border-top-0", "rounded-bottom", "p-3", "p-md-4");
+      }
+
+      function isFieldVisible(element) {
+        if (!element) return false;
+        const style = window.getComputedStyle(element);
+        return style.display !== "none" && style.visibility !== "hidden" && element.offsetParent !== null;
+      }
+
+      function isEmptyValue(el) {
+        if (!el) return true;
+        const tag = el.tagName.toLowerCase();
+        if (tag === "select") {
+          const value = (el.value || "").trim().toLowerCase();
+          return !value || value === "selecione" || value === "selecione uma opção";
+        }
+        if (tag === "input" && el.type === "file") {
+          return el.required && el.files.length === 0;
+        }
+        const value = (el.value || "").trim();
+        return !value;
+      }
+
+      function getFieldLabel(el) {
+        if (!el) return "";
+        const id = el.id;
+        if (id) {
+          const explicit = document.querySelector(`label[for="${id}"]`);
+          if (explicit?.textContent) return explicit.textContent.trim();
+        }
+        const wrapperLabel = el.closest("[data-field-id]")?.querySelector("label");
+        if (wrapperLabel?.textContent) return wrapperLabel.textContent.trim();
+        return el.name || el.id || "Campo obrigatório";
+      }
+
+      function markFieldInvalid(el) {
+        if (!el) return;
+        el.classList.add("is-invalid");
+        el.setAttribute("aria-invalid", "true");
+      }
+
+      function clearFieldInvalid(el) {
+        if (!el) return;
+        if (el.checkValidity() && !isEmptyValue(el)) {
+          el.classList.remove("is-invalid");
+          el.removeAttribute("aria-invalid");
+        }
+      }
+
+      function collectMissingFields(sectionId) {
+        const sectionEl = document.querySelector(`[data-section-id="${sectionId}"]`);
+        if (!sectionEl || sectionEl.style.display === "none") return [];
+        const requiredFields = Array.from(
+          sectionEl.querySelectorAll("input, select, textarea")
+        ).filter((el) => el.required && isFieldVisible(el));
+
+        const missing = [];
+        requiredFields.forEach((el) => {
+          const invalid = !el.checkValidity() || isEmptyValue(el);
+          if (invalid) {
+            markFieldInvalid(el);
+            missing.push({ element: el, label: getFieldLabel(el) });
+          } else {
+            clearFieldInvalid(el);
+          }
+        });
+
+        return missing;
+      }
+
+      function collectAllMissing() {
+        return formConfig.sections.flatMap((section) => collectMissingFields(section.id)).filter(Boolean);
+      }
+
+      function showPendingModal(missing) {
+        if (!pendingModalInstance) {
+          const modalEl = document.getElementById("pending-modal");
+          if (!modalEl) return;
+          pendingModalInstance = bootstrap.Modal.getOrCreateInstance(modalEl, { backdrop: "static" });
+        }
+        const list = document.getElementById("pending-fields-list");
+        if (list) {
+          list.innerHTML = "";
+          missing.forEach((item) => {
+            const li = document.createElement("li");
+            li.textContent = item.label;
+            list.appendChild(li);
+          });
+        }
+        pendingModalInstance.show();
+        const firstMissing = missing[0]?.element;
+        if (firstMissing) {
+          setTimeout(() => firstMissing.focus({ preventScroll: false }), 200);
+        }
+      }
+
+      function getNextVisibleSection(currentId) {
+        const currentIndex = tabOrder.indexOf(currentId);
+        if (currentIndex === -1) return null;
+        for (let i = currentIndex + 1; i < tabOrder.length; i++) {
+          const id = tabOrder[i];
+          const entry = tabRegistry.get(id);
+          if (entry && entry.li.style.display !== "none") return id;
+        }
+        return null;
+      }
+
+      function getPreviousVisibleSection(currentId) {
+        const currentIndex = tabOrder.indexOf(currentId);
+        if (currentIndex <= 0) return null;
+        for (let i = currentIndex - 1; i >= 0; i--) {
+          const id = tabOrder[i];
+          const entry = tabRegistry.get(id);
+          if (entry && entry.li.style.display !== "none") return id;
+        }
+        return null;
+      }
+
+      function handleAdvance(sectionId) {
+        const missing = collectMissingFields(sectionId);
+        if (missing.length > 0) {
+          showPendingModal(missing);
+          return;
+        }
+        const nextId = getNextVisibleSection(sectionId);
+        if (nextId) {
+          const nextBtn = tabRegistry.get(nextId)?.button;
+          if (nextBtn) bootstrap.Tab.getOrCreateInstance(nextBtn).show();
+        }
+      }
+
+      function updateSubmitEnabled() {
+        const submitBtn = document.getElementById("section-submit-button");
+        if (!submitBtn) return;
+        if (formLocked) {
+          submitBtn.disabled = true;
+          return;
+        }
+        const missing = collectAllMissing();
+        submitBtn.disabled = missing.length > 0;
+      }
+
+      function addSectionActions() {
+        formConfig.sections.forEach((section) => {
+          const container = document.querySelector(`[data-section-id="${section.id}"]`);
+          if (!container) return;
+          const actions = document.createElement("div");
+          actions.className = "d-flex flex-wrap align-items-center justify-content-between mt-4 section-actions gap-2";
+          const leftGroup = document.createElement("div");
+          leftGroup.className = "d-flex gap-2";
+          if (section.id !== "dados-pessoais") {
+            const backBtn = document.createElement("button");
+            backBtn.type = "button";
+            backBtn.className = "btn btn-soft back-button";
+            backBtn.textContent = "Voltar";
+            backBtn.addEventListener("click", () => {
+              const prevId = getPreviousVisibleSection(section.id);
+              if (prevId) {
+                const prevBtn = tabRegistry.get(prevId)?.button;
+                if (prevBtn) bootstrap.Tab.getOrCreateInstance(prevBtn).show();
+              }
+            });
+            leftGroup.appendChild(backBtn);
+          }
+          const rightGroup = document.createElement("div");
+          rightGroup.className = "d-flex flex-wrap gap-2 justify-content-end";
+          if (section.id === "documentacao") {
+            const submitBtn = document.createElement("button");
+            submitBtn.type = "submit";
+            submitBtn.id = "section-submit-button";
+            submitBtn.className = "btn btn-primary";
+            submitBtn.textContent = "Enviar matrícula";
+            rightGroup.appendChild(submitBtn);
+          } else {
+            const nextBtn = document.createElement("button");
+            nextBtn.type = "button";
+            nextBtn.className = "btn btn-primary";
+            nextBtn.textContent = "Avançar";
+            nextBtn.addEventListener("click", () => handleAdvance(section.id));
+            rightGroup.appendChild(nextBtn);
+          }
+          actions.append(leftGroup, rightGroup);
+          container.appendChild(actions);
+        });
+      }
+
+      function requireAllFields() {
+        formElement.querySelectorAll("input, select, textarea").forEach((el) => {
+          if (el.type === "hidden") return;
+          el.required = true;
+        });
+      }
+
+      function renderScreeningQuestion(modalInstance) {
+        if (!screeningModalEl) return;
+        const titleEl = screeningModalEl.querySelector(".modal-title");
+        const bodyEl = screeningModalEl.querySelector(".modal-body");
+        const footerEl = screeningModalEl.querySelector(".modal-footer");
+        if (titleEl) titleEl.textContent = "Triagem de Saúde – Esforço Físico";
+        if (bodyEl)
+          bodyEl.innerHTML = "<p>Você passa mal ao realizar atividade física que exige esforço físico ao extremo?</p>";
+        if (footerEl) {
+          footerEl.innerHTML = `
+            <button type="button" class="btn btn-primary" id="screening-no">Não</button>
+            <button type="button" class="btn btn-outline-secondary" id="screening-yes">Sim</button>
+          `;
+          footerEl.querySelector("#screening-no")?.addEventListener("click", () => {
+            try {
+              localStorage.setItem(STORAGE_KEY_TRIAGEM, "no");
+            } catch (e) { /* ignore storage errors */ }
+            unlockForm();
+            modalInstance?.hide();
+          });
+          footerEl.querySelector("#screening-yes")?.addEventListener("click", () => {
+            try {
+              localStorage.setItem(STORAGE_KEY_TRIAGEM, "yes");
+            } catch (e) { /* ignore storage errors */ }
+            lockForm();
+            renderScreeningCaution(modalInstance);
+            modalInstance?.show();
+          });
+        }
+      }
+
+      function renderScreeningCaution(modalInstance) {
+        if (!screeningModalEl) return;
+        const titleEl = screeningModalEl.querySelector(".modal-title");
+        const bodyEl = screeningModalEl.querySelector(".modal-body");
+        const footerEl = screeningModalEl.querySelector(".modal-footer");
+        if (titleEl) titleEl.textContent = "Recomendação Importante de Saúde";
+        if (bodyEl)
+          bodyEl.innerHTML =
+            "<p>O frevo é uma prática de alta intensidade que aumenta bastante a frequência cardíaca e exige condicionamento cardiorrespiratório.</p>" +
+            "<p>Sentir tontura, desmaio ou mal-estar durante esforços extremos é um sinal de alerta: é indicado interromper a atividade e buscar avaliação de um profissional de saúde antes de prosseguir.</p>";
+        if (footerEl) {
+          footerEl.innerHTML = `<div class="text-end text-muted small">Redirecionando em <span id="screening-countdown">${CAUTION_REDIRECT_SECONDS}</span>s...</div>`;
+        }
+        lockForm();
+        if (cautionCountdownId) {
+          clearInterval(cautionCountdownId);
+          cautionCountdownId = null;
+        }
+        const countdownEl = screeningModalEl.querySelector("#screening-countdown");
+        let remaining = CAUTION_REDIRECT_SECONDS;
+        cautionCountdownId = setInterval(() => {
+          remaining -= 1;
+          if (countdownEl) countdownEl.textContent = Math.max(remaining, 0);
+          if (remaining <= 0) {
+            clearInterval(cautionCountdownId);
+            cautionCountdownId = null;
+            window.location.href = "https://escoladefrevo.recife.pe.gov.br/";
+          }
+        }, 1000);
+      }
+
+      function initScreeningModal() {
+        if (screeningInitialized) return;
+        if (!window.bootstrap || !window.bootstrap.Modal) {
+          window.addEventListener("load", initScreeningModal, { once: true });
+          return;
+        }
+        screeningInitialized = true;
+        lockForm();
+        if (!screeningModalEl) return;
+        const modalInstance = bootstrap.Modal.getOrCreateInstance(screeningModalEl, {
+          backdrop: "static",
+          keyboard: false
+        });
+
+        let stored = "";
+        try {
+          stored = localStorage.getItem(STORAGE_KEY_TRIAGEM) || "";
+        } catch (e) {
+          stored = "";
+        }
+
+        if (stored === "no") {
+          unlockForm();
+          return;
+        }
+
+        if (stored === "yes") {
+          renderScreeningCaution(modalInstance);
+          modalInstance.show();
+          return;
+        }
+
+        renderScreeningQuestion(modalInstance);
+        modalInstance.show();
+      }
+
       function enforceTransforms(event) {
         const input = event.target;
         const transformKey = input.dataset.transform;
@@ -2489,6 +3016,18 @@
         }
       }
 
+      function setFaixaEtariaByAge(age) {
+        const faixaEntry = fieldRegistry.get("faixaetaria");
+        if (!faixaEntry?.input) return;
+        let faixa = "";
+        if (age > 6 && age <= 11) faixa = "6 A 11 ANOS";
+        else if (age > 11 && age <= 17) faixa = "12 A 17 ANOS";
+        else if (age > 18 && age <= 49) faixa = "18 A 49 ANOS";
+        else if (age > 49) faixa = "50+";
+        faixaEntry.input.value = faixa;
+        ["input", "change"].forEach((t) => faixaEntry.input.dispatchEvent(new Event(t, { bubbles: true })));
+      }
+
       function computeAge() {
         const birthEntry = fieldRegistry.get("datanascimento");
         const ageEntry = fieldRegistry.get("idade");
@@ -2496,6 +3035,7 @@
         const birthDate = birthEntry.input.value ? new Date(birthEntry.input.value) : null;
         if (!birthDate || Number.isNaN(birthDate.getTime())) {
           ageEntry.input.value = "";
+          setFaixaEtariaByAge(0);
           return;
         }
         const today = new Date();
@@ -2505,6 +3045,7 @@
           age--;
         }
         ageEntry.input.value = age;
+        setFaixaEtariaByAge(age);
       }
 
       function collectPreviewData() {
@@ -2557,6 +3098,10 @@
       }
 
       function showSubmissionFeedback({ success, message }) {
+        if (submissionRedirectId) {
+          clearInterval(submissionRedirectId);
+          submissionRedirectId = null;
+        }
         const toast = document.createElement("div");
         toast.className = "form-feedback active";
         toast.innerHTML = `
@@ -2565,11 +3110,29 @@
             <div class="form-feedback-title ${success ? "success" : "alert"}">${success ? "Envio realizado" : "Falha no envio"}</div>
             <div class="form-feedback-body">
               <p>${message}</p>
+              <p class="mb-0 text-muted">Redirecionando em <span id="submit-countdown">${SUBMISSION_REDIRECT_SECONDS}</span>s...</p>
             </div>
           </div>`;
         document.body.appendChild(toast);
-        toast.querySelector(".form-feedback-close").addEventListener("click", () => toast.remove());
-        setTimeout(() => toast.remove(), 6000);
+        const closeBtn = toast.querySelector(".form-feedback-close");
+        const countdownEl = toast.querySelector("#submit-countdown");
+        const redirect = () => {
+          window.location.href = "https://escoladefrevo.recife.pe.gov.br/";
+        };
+        closeBtn.addEventListener("click", () => {
+          if (submissionRedirectId) clearInterval(submissionRedirectId);
+          redirect();
+        });
+        let remaining = SUBMISSION_REDIRECT_SECONDS;
+        submissionRedirectId = setInterval(() => {
+          remaining -= 1;
+          if (countdownEl) countdownEl.textContent = Math.max(remaining, 0);
+          if (remaining <= 0) {
+            clearInterval(submissionRedirectId);
+            submissionRedirectId = null;
+            redirect();
+          }
+        }, 1000);
       }
 
       async function submitFormData() {
@@ -2577,6 +3140,13 @@
         setSubmitting(true);
         const formData = new FormData(formElement);
         formData.append("ano_letivo", computeAnoLetivo());
+        formData.append("tipomatricula", fieldRegistry.get("tipoMatricula")?.input?.value || "");
+        document.querySelectorAll('input[type="file"][name]').forEach((input) => {
+          const { name, files } = input;
+          if (!name) return;
+          formData.delete(name);
+          Array.from(files || []).forEach((file) => formData.append(name, file));
+        });
         try {
           const response = await fetch(SUBMIT_ENDPOINT, {
             method: "POST",
@@ -2600,6 +3170,73 @@
         }
       }
 
+      function isWithinActiveWindow() {
+        const now = new Date();
+        return now >= WINDOW_START && now <= WINDOW_END;
+      }
+
+      function showAvailabilityModal() {
+        const modalEl = document.getElementById("availability-modal");
+        if (!modalEl) return;
+        if (!window.bootstrap?.Modal) {
+          if (!availabilityModalPending) {
+            availabilityModalPending = true;
+            window.addEventListener("load", () => {
+              availabilityModalPending = false;
+              showAvailabilityModal();
+            }, { once: true });
+          }
+          return;
+        }
+        const modalInstance = bootstrap.Modal.getOrCreateInstance(modalEl, {
+          backdrop: "static",
+          keyboard: false
+        });
+        const countdownEl = modalEl.querySelector("#availability-countdown");
+        const statusEl = modalEl.querySelector("#availability-status");
+        if (availabilityCountdownId) {
+          clearInterval(availabilityCountdownId);
+          availabilityCountdownId = null;
+        }
+
+        const updateCountdown = () => {
+          const now = new Date();
+          if (now >= WINDOW_END) {
+            if (statusEl) statusEl.textContent = "Período encerrado.";
+            if (countdownEl) countdownEl.textContent = "00:00:00";
+            return false;
+          }
+          if (now >= WINDOW_START) {
+            modalInstance.hide();
+            initScreeningModal();
+            return false;
+          }
+          const diff = WINDOW_START.getTime() - now.getTime();
+          const hours = Math.floor(diff / 1000 / 60 / 60);
+          const minutes = Math.floor((diff / 1000 / 60) % 60);
+          const seconds = Math.floor((diff / 1000) % 60);
+          if (countdownEl) {
+            countdownEl.textContent = `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+          }
+          return true;
+        };
+
+        if (!updateCountdown()) {
+          modalInstance.show();
+          return;
+        }
+
+        availabilityCountdownId = setInterval(() => {
+          const keep = updateCountdown();
+          if (!keep && availabilityCountdownId) {
+            clearInterval(availabilityCountdownId);
+            availabilityCountdownId = null;
+          }
+        }, 1000);
+
+        modalInstance.show();
+      }
+
       function hidePreview() {
         const backdrop = document.getElementById("preview-backdrop");
         backdrop.classList.remove("active");
@@ -2614,6 +3251,21 @@
           enforceTransforms(event);
           enforceExactLength(event.target);
           enforceMatch(event.target);
+          clearFieldInvalid(event.target);
+          if (event.target.id === "email") {
+            const confirmEmail = fieldRegistry.get("confirmarEmail")?.input;
+            if (confirmEmail) enforceMatch(confirmEmail);
+          }
+          if (event.target.id === "whatsapp") {
+            const confirmWhatsapp = fieldRegistry.get("confirmarWhatsApp")?.input;
+            if (confirmWhatsapp) enforceMatch(confirmWhatsapp);
+          }
+          if (event.target.id === "faixaetaria" || event.target.id === "modalidade") {
+            fetchNivelOptions(fieldRegistry.get("nivel")?.input?.value || "");
+          }
+          if (event.target.id === "nivel") {
+            fetchTurmaOptions(fieldRegistry.get("turma")?.input?.value || "");
+          }
           if (event.target.dataset.readonlyDynamic === "true" && event.target.value === "") {
             event.target.readOnly = false;
           } else if (event.target.dataset.readonlyDynamic === "true" && event.target.value) {
@@ -2665,6 +3317,19 @@
 
         formElement.addEventListener("submit", (event) => {
           event.preventDefault();
+          const currentTab = document.querySelector(".tab-pane.active");
+          const currentId = currentTab?.dataset.sectionId;
+          const missing = currentId ? collectMissingFields(currentId) : [];
+          if (missing.length > 0) {
+            showPendingModal(missing);
+            return;
+          }
+          const allMissing = collectAllMissing();
+          if (allMissing.length > 0) {
+            showPendingModal(allMissing);
+            return;
+          }
+          if (formLocked) return;
           validateEmails();
           validateWhatsapp();
           const numeroEntry = fieldRegistry.get("numero");
@@ -2731,7 +3396,11 @@
         togglePcdFields();
         toggleResponsavelSection();
         handleConditionalFields();
-        initScreeningModal();
+        if (isWithinActiveWindow()) {
+          initScreeningModal();
+        } else {
+          showAvailabilityModal();
+        }
         attachEvents();
         addSectionActions();
         updateSubmitEnabled();

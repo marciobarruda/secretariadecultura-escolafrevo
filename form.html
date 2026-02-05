@@ -570,6 +570,258 @@
       font-size: 0.9rem;
     }
 
+    /* Feedback Modal de Submissão Animado */
+    .submission-feedback-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.75);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      z-index: 1400;
+      backdrop-filter: blur(5px);
+    }
+
+    .submission-feedback-backdrop.active {
+      display: flex;
+    }
+
+    .submission-feedback-modal {
+      max-width: 480px;
+      width: 100%;
+      border-radius: 24px;
+      padding: 2.5rem 2rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .submission-feedback-modal.success {
+      background: linear-gradient(145deg, #e8f5e9 0%, #ffffff 50%, #f1f8e9 100%);
+      border: 3px solid #4caf50;
+      box-shadow: 0 25px 60px rgba(76, 175, 80, 0.3);
+      animation: successPop 0.6s ease-out;
+    }
+
+    .submission-feedback-modal.error {
+      background: linear-gradient(145deg, #ffebee 0%, #ffffff 50%, #fce4ec 100%);
+      border: 3px solid #f44336;
+      box-shadow: 0 25px 60px rgba(244, 67, 54, 0.3);
+      animation: errorShake 0.6s ease-out;
+    }
+
+    @keyframes successPop {
+      0% {
+        transform: scale(0.5);
+        opacity: 0;
+      }
+
+      50% {
+        transform: scale(1.1);
+      }
+
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    @keyframes errorShake {
+
+      0%,
+      100% {
+        transform: translateX(0);
+        opacity: 1;
+      }
+
+      10%,
+      30%,
+      50%,
+      70%,
+      90% {
+        transform: translateX(-8px);
+      }
+
+      20%,
+      40%,
+      60%,
+      80% {
+        transform: translateX(8px);
+      }
+    }
+
+    @keyframes confettiFall {
+      0% {
+        transform: translateY(-100%) rotate(0deg);
+        opacity: 1;
+      }
+
+      100% {
+        transform: translateY(100vh) rotate(720deg);
+        opacity: 0;
+      }
+    }
+
+    @keyframes emojiFloat {
+      0% {
+        transform: scale(0) rotate(-20deg);
+      }
+
+      50% {
+        transform: scale(1.2) rotate(10deg);
+      }
+
+      100% {
+        transform: scale(1) rotate(0deg);
+      }
+    }
+
+    @keyframes pulseGlow {
+
+      0%,
+      100% {
+        box-shadow: 0 0 20px rgba(76, 175, 80, 0.4);
+      }
+
+      50% {
+        box-shadow: 0 0 40px rgba(76, 175, 80, 0.6);
+      }
+    }
+
+    @keyframes errorPulse {
+
+      0%,
+      100% {
+        box-shadow: 0 0 20px rgba(244, 67, 54, 0.4);
+      }
+
+      50% {
+        box-shadow: 0 0 40px rgba(244, 67, 54, 0.6);
+      }
+    }
+
+    .submission-feedback-modal.success {
+      animation: successPop 0.6s ease-out, pulseGlow 2s ease-in-out infinite 0.6s;
+    }
+
+    .submission-feedback-modal.error {
+      animation: errorShake 0.6s ease-out, errorPulse 2s ease-in-out infinite 0.6s;
+    }
+
+    .submission-emoji-row {
+      font-size: 3.5rem;
+      margin-bottom: 1.25rem;
+      display: flex;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    .submission-emoji-row span {
+      display: inline-block;
+      animation: emojiFloat 0.5s ease-out forwards;
+    }
+
+    .submission-emoji-row span:nth-child(1) {
+      animation-delay: 0.1s;
+    }
+
+    .submission-emoji-row span:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+
+    .submission-emoji-row span:nth-child(3) {
+      animation-delay: 0.3s;
+    }
+
+    .submission-emoji-row span:nth-child(4) {
+      animation-delay: 0.4s;
+    }
+
+    .submission-emoji-row span:nth-child(5) {
+      animation-delay: 0.5s;
+    }
+
+    .submission-feedback-title {
+      font-size: 1.6rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+
+    .submission-feedback-title.success {
+      color: #2e7d32;
+    }
+
+    .submission-feedback-title.error {
+      color: #c62828;
+    }
+
+    .submission-feedback-message {
+      font-size: 1.1rem;
+      line-height: 1.7;
+      color: #37474f;
+      margin-bottom: 1.5rem;
+      padding: 0 0.5rem;
+    }
+
+    .submission-feedback-countdown {
+      font-size: 0.95rem;
+      color: #78909c;
+      margin-bottom: 1.25rem;
+    }
+
+    .submission-feedback-btn {
+      border: none;
+      padding: 0.85rem 2.5rem;
+      border-radius: 30px;
+      font-weight: 600;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .submission-feedback-btn.success {
+      background: linear-gradient(135deg, #43a047, #2e7d32);
+      color: #fff;
+      box-shadow: 0 4px 15px rgba(67, 160, 71, 0.4);
+    }
+
+    .submission-feedback-btn.error {
+      background: linear-gradient(135deg, #e53935, #c62828);
+      color: #fff;
+      box-shadow: 0 4px 15px rgba(229, 57, 53, 0.4);
+    }
+
+    .submission-feedback-btn:hover {
+      transform: translateY(-2px);
+    }
+
+    .submission-feedback-btn.success:hover {
+      box-shadow: 0 6px 20px rgba(67, 160, 71, 0.5);
+    }
+
+    .submission-feedback-btn.error:hover {
+      box-shadow: 0 6px 20px rgba(229, 57, 53, 0.5);
+    }
+
+    .confetti-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .confetti {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      top: -10px;
+      animation: confettiFall 3s ease-out forwards;
+    }
+
     .btn-primary {
       background-color: #0062ff;
       border-color: #0062ff;
@@ -652,6 +904,211 @@
       body * {
         visibility: hidden !important;
       }
+    }
+
+    /* Modal de Alerta de Verificação de Dados */
+    .data-check-modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.7);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      z-index: 1300;
+      backdrop-filter: blur(4px);
+    }
+
+    .data-check-modal-backdrop.active {
+      display: flex;
+    }
+
+    .data-check-modal {
+      background: linear-gradient(145deg, #fff8e1 0%, #ffffff 50%, #e3f2fd 100%);
+      border-radius: 20px;
+      max-width: 520px;
+      width: 100%;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.3);
+      padding: 2rem;
+      text-align: center;
+      border: 3px solid;
+      border-image: linear-gradient(135deg, #ff9800, #2196f3) 1;
+      animation: dataCheckPulse 0.6s ease-out;
+    }
+
+    @keyframes dataCheckPulse {
+      0% {
+        transform: scale(0.8);
+        opacity: 0;
+      }
+
+      50% {
+        transform: scale(1.05);
+      }
+
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    @keyframes dataCheckShake {
+
+      0%,
+      100% {
+        transform: translateX(0);
+      }
+
+      10%,
+      30%,
+      50%,
+      70%,
+      90% {
+        transform: translateX(-5px);
+      }
+
+      20%,
+      40%,
+      60%,
+      80% {
+        transform: translateX(5px);
+      }
+    }
+
+    @keyframes emojiPop {
+      0% {
+        transform: scale(0) rotate(-10deg);
+      }
+
+      50% {
+        transform: scale(1.3) rotate(5deg);
+      }
+
+      100% {
+        transform: scale(1) rotate(0deg);
+      }
+    }
+
+    .data-check-emoji-row {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+      display: flex;
+      justify-content: center;
+      gap: 0.75rem;
+    }
+
+    .data-check-emoji-row span {
+      animation: emojiPop 0.5s ease-out forwards;
+    }
+
+    .data-check-emoji-row span:nth-child(1) {
+      animation-delay: 0.1s;
+    }
+
+    .data-check-emoji-row span:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+
+    .data-check-emoji-row span:nth-child(3) {
+      animation-delay: 0.3s;
+    }
+
+    .data-check-emoji-row span:nth-child(4) {
+      animation-delay: 0.4s;
+    }
+
+    .data-check-emoji-row span:nth-child(5) {
+      animation-delay: 0.5s;
+    }
+
+    .data-check-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #e65100;
+      margin-bottom: 1rem;
+      animation: dataCheckShake 0.8s ease-in-out 0.5s;
+    }
+
+    .data-check-body {
+      color: #37474f;
+      font-size: 1.05rem;
+      line-height: 1.7;
+      margin-bottom: 1.5rem;
+    }
+
+    .data-check-body strong {
+      color: #d32f2f;
+    }
+
+    .data-check-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: linear-gradient(135deg, #1976d2, #0d47a1);
+      color: #fff !important;
+      padding: 0.65rem 1.25rem;
+      border-radius: 30px;
+      font-weight: 600;
+      text-decoration: none;
+      margin-bottom: 1.25rem;
+      transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: 0 4px 15px rgba(25, 118, 210, 0.4);
+    }
+
+    .data-check-link:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(25, 118, 210, 0.5);
+      color: #fff;
+    }
+
+    .data-check-btn {
+      background: linear-gradient(135deg, #43a047, #2e7d32);
+      color: #fff;
+      border: none;
+      padding: 0.75rem 2rem;
+      border-radius: 30px;
+      font-weight: 600;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: 0 4px 15px rgba(67, 160, 71, 0.4);
+    }
+
+    .data-check-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(67, 160, 71, 0.5);
+    }
+
+    .conecta-link-section {
+      background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+      border: 1px solid rgba(33, 150, 243, 0.3);
+      border-radius: 12px;
+      padding: 1rem 1.25rem;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .conecta-link-section i {
+      font-size: 1.5rem;
+      color: #1976d2;
+    }
+
+    .conecta-link-section a {
+      font-weight: 600;
+      color: #1565c0;
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .conecta-link-section a:hover {
+      color: #0d47a1;
+      text-decoration: underline;
+    }
+
+    /* Impressão apenas do conteúdo do modal */
+    @media print {
 
       .feedback-modal,
       .feedback-modal * {
@@ -737,6 +1194,34 @@
           <button type="button" class="btn btn-outline-secondary" id="screening-yes">Sim</button>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- Modal de Verificação de Dados Pessoais -->
+  <div class="data-check-modal-backdrop" id="data-check-backdrop" role="dialog" aria-modal="true">
+    <div class="data-check-modal">
+      <div class="data-check-emoji-row">
+        <span>⚠️</span>
+        <span>📋</span>
+        <span>👀</span>
+        <span>✅</span>
+        <span>🔍</span>
+      </div>
+      <div class="data-check-title">Atenção! Verifique seus dados pessoais</div>
+      <div class="data-check-body">
+        <p>Antes de prosseguir, <strong>confira com muito cuidado</strong> todos os seus dados pessoais preenchidos no
+          formulário.</p>
+        <p>Caso identifique informações <strong>divergentes ou desatualizadas</strong>, atualize-as no portal
+          <strong>Conecta Recife</strong> antes de continuar a matrícula.
+        </p>
+      </div>
+      <a href="https://conecta.recife.pe.gov.br/acesso/meusdados" target="_blank" rel="noopener noreferrer"
+        class="data-check-link">
+        <i class="bi bi-box-arrow-up-right"></i>
+        Atualizar dados no Conecta Recife
+      </a>
+      <br>
+      <button type="button" class="data-check-btn" id="data-check-confirm">Entendi, vou conferir meus dados</button>
     </div>
   </div>
 
@@ -2222,7 +2707,14 @@
     function evaluateFieldRequired(fieldId) {
       const entry = fieldRegistry.get(fieldId);
       if (!entry) return;
-      const { config, input } = entry;
+      const { config, input, wrapper } = entry;
+
+      // Se o campo estiver oculto (via display: none no wrapper), não deve ser required
+      if (wrapper.style.display === "none") {
+        input.required = false;
+        input.setCustomValidity("");
+        return;
+      }
       const dynamic = config.dynamic;
       if (config.required === true) {
         input.required = true;
@@ -2332,6 +2824,19 @@
       sectionContainer.className = "tab-pane fade";
       sectionContainer.dataset.sectionId = section.id;
       sectionContainer.id = `tab-${section.id}`;
+
+      // Adiciona o link do Conecta Recife na primeira seção (dados-pessoais)
+      if (section.id === "dados-pessoais") {
+        const conectaLink = document.createElement("div");
+        conectaLink.className = "conecta-link-section";
+        conectaLink.innerHTML = `
+          <i class="bi bi-person-lines-fill"></i>
+          <a href="https://conecta.recife.pe.gov.br/acesso/meusdados" target="_blank" rel="noopener noreferrer">
+            Atualizar dados cadastrais no Conecta Recife
+          </a>
+        `;
+        sectionContainer.appendChild(conectaLink);
+      }
 
       const row = document.createElement("div");
       row.className = "row g-3";
@@ -2628,8 +3133,8 @@
           try {
             localStorage.setItem(STORAGE_KEY_TRIAGEM, "no");
           } catch (e) { /* ignore storage errors */ }
-          unlockForm();
           modalInstance?.hide();
+          showDataCheckModal();
         });
         footerEl.querySelector("#screening-yes")?.addEventListener("click", () => {
           try {
@@ -2707,6 +3212,25 @@
 
       renderScreeningQuestion(modalInstance);
       modalInstance.show();
+    }
+
+    function showDataCheckModal() {
+      const backdrop = document.getElementById("data-check-backdrop");
+      if (!backdrop) {
+        unlockForm();
+        return;
+      }
+      backdrop.classList.add("active");
+      backdrop.setAttribute("aria-hidden", "false");
+
+      const confirmBtn = document.getElementById("data-check-confirm");
+      if (confirmBtn) {
+        confirmBtn.addEventListener("click", () => {
+          backdrop.classList.remove("active");
+          backdrop.setAttribute("aria-hidden", "true");
+          unlockForm();
+        }, { once: true });
+      }
     }
 
     function enforceTransforms(event) {
@@ -3171,32 +3695,78 @@
         : "Enviar matrícula";
     }
 
-    function showSubmissionFeedback({ success, message }) {
+    function showSubmissionFeedback({ success, message, title }) {
       if (submissionRedirectId) {
         clearInterval(submissionRedirectId);
         submissionRedirectId = null;
       }
-      const toast = document.createElement("div");
-      toast.className = "form-feedback active";
-      toast.innerHTML = `
-          <div class="form-feedback-dialog">
-            <button class="form-feedback-close" aria-label="Fechar">×</button>
-            <div class="form-feedback-title ${success ? "success" : "alert"}">${success ? "Envio realizado" : "Falha no envio"}</div>
-            <div class="form-feedback-body">
-              <p>${message}</p>
-              <p class="mb-0 text-muted">Redirecionando em <span id="submit-countdown">${SUBMISSION_REDIRECT_SECONDS}</span>s...</p>
-            </div>
-          </div>`;
-      document.body.appendChild(toast);
-      const closeBtn = toast.querySelector(".form-feedback-close");
-      const countdownEl = toast.querySelector("#submit-countdown");
+
+      // Remove qualquer feedback anterior
+      document.querySelectorAll('.submission-feedback-backdrop').forEach(el => el.remove());
+
+      const successEmojis = ['🎉', '✅', '🎊', '💃', '🌟'];
+      const errorEmojis = ['😔', '❌', '⚠️', '🔄', '💪'];
+      const emojis = success ? successEmojis : errorEmojis;
+
+      const defaultTitle = success ? 'Matrícula Enviada com Sucesso!' : 'Ops! Algo deu errado';
+      const displayTitle = title || defaultTitle;
+      const displayMessage = message || (success
+        ? 'Sua matrícula foi enviada com sucesso. Aguarde o processamento.'
+        : 'Não foi possível enviar sua matrícula. Por favor, tente novamente.');
+
+      const backdrop = document.createElement('div');
+      backdrop.className = 'submission-feedback-backdrop active';
+      backdrop.innerHTML = `
+        <div class="submission-feedback-modal ${success ? 'success' : 'error'}">
+          ${success ? '<div class="confetti-container" id="confetti-container"></div>' : ''}
+          <div class="submission-emoji-row">
+            ${emojis.map(e => `<span>${e}</span>`).join('')}
+          </div>
+          <div class="submission-feedback-title ${success ? 'success' : 'error'}">${displayTitle}</div>
+          <div class="submission-feedback-message">${displayMessage}</div>
+          <div class="submission-feedback-countdown">
+            Redirecionando em <strong><span id="submit-countdown-new">${SUBMISSION_REDIRECT_SECONDS}</span></strong> segundos...
+          </div>
+          <button type="button" class="submission-feedback-btn ${success ? 'success' : 'error'}">
+            ${success ? 'Continuar' : 'Tentar Novamente'}
+          </button>
+        </div>
+      `;
+      document.body.appendChild(backdrop);
+
+      // Adiciona confetes para sucesso
+      if (success) {
+        const confettiContainer = backdrop.querySelector('#confetti-container');
+        const colors = ['#4caf50', '#8bc34a', '#ffeb3b', '#ff9800', '#e91e63', '#9c27b0', '#2196f3'];
+        for (let i = 0; i < 50; i++) {
+          const confetti = document.createElement('div');
+          confetti.className = 'confetti';
+          confetti.style.left = Math.random() * 100 + '%';
+          confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+          confetti.style.animationDelay = Math.random() * 2 + 's';
+          confetti.style.animationDuration = (2 + Math.random() * 2) + 's';
+          confetti.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+          confetti.style.transform = `rotate(${Math.random() * 360}deg)`;
+          confettiContainer.appendChild(confetti);
+        }
+      }
+
+      const closeBtn = backdrop.querySelector('.submission-feedback-btn');
+      const countdownEl = backdrop.querySelector('#submit-countdown-new');
+
       const redirect = () => {
-        window.location.href = "https://escoladefrevo.recife.pe.gov.br/";
+        if (success) {
+          window.location.href = 'https://escoladefrevo.recife.pe.gov.br/';
+        } else {
+          backdrop.remove();
+        }
       };
-      closeBtn.addEventListener("click", () => {
+
+      closeBtn.addEventListener('click', () => {
         if (submissionRedirectId) clearInterval(submissionRedirectId);
         redirect();
       });
+
       let remaining = SUBMISSION_REDIRECT_SECONDS;
       submissionRedirectId = setInterval(() => {
         remaining -= 1;
@@ -3212,37 +3782,112 @@
     async function submitFormData() {
       if (formLocked) return;
       setSubmitting(true);
-      const formData = new FormData(formElement);
-      formData.append("ano_letivo", computeAnoLetivo());
-      formData.append("tipomatricula", fieldRegistry.get("tipoMatricula")?.input?.value || "");
-      document.querySelectorAll('input[type="file"][name]').forEach((input) => {
-        const { name, files } = input;
-        if (!name) return;
-        formData.delete(name);
-        Array.from(files || []).forEach((file) => formData.append(name, file));
-      });
+
       try {
+        const formData = new FormData();
+
+        // 1. Campos base definidos no config
+        if (formConfig.submitPayload && Array.isArray(formConfig.submitPayload.baseFields)) {
+          formConfig.submitPayload.baseFields.forEach((key) => {
+            const entry =
+              Array.from(fieldRegistry.values()).find(e => e.config.name === key) ||
+              fieldRegistry.get(key);
+
+            if (entry && entry.input) {
+              if (entry.config.type === "radio" || entry.config.type === "checkbox") {
+                const wrappers = entry.wrapper.querySelectorAll("input:checked");
+                const values = Array.from(wrappers).map(c => c.value);
+                formData.append(key, values.length ? values.join(",") : "");
+              } else if (entry.config.type !== "file") {
+                formData.append(key, entry.input.value);
+              }
+            } else {
+              const el = document.querySelector(`[name="${key}"]`);
+              if (el && el.type !== "file") formData.append(key, el.value);
+            }
+          });
+        }
+
+        // Campos computados extras
+        formData.append("ano_letivo", computeAnoLetivo());
+        if (!formData.has("tipomatricula")) {
+          formData.append("tipomatricula", fieldRegistry.get("tipoMatricula")?.input?.value || "");
+        }
+
+        // 2. Arquivos (Binários)
+        fieldRegistry.forEach((entry) => {
+          if (entry.config.type === "file" && entry.input.files.length > 0) {
+            const file = entry.input.files[0];
+            const transforms = entry.config.submitTransforms;
+
+            // Envia o arquivo binário com o nome original do campo ou o nome definido no transform?
+            // Geralmente webhook espera o nome do campo. Usaremos entry.config.name (ex: rg_frente).
+            formData.append(entry.config.name, file);
+
+            // Se houver transforms para extensão, adicionamos também
+            if (transforms && Array.isArray(transforms)) {
+              transforms.forEach((t) => {
+                if (t.type === "string") { // ex: extension
+                  const ext = file.name.substring(file.name.lastIndexOf(".")).toLowerCase();
+                  formData.append(t.name, ext);
+                }
+              });
+            }
+          }
+        });
+
         const response = await fetch(SUBMIT_ENDPOINT, {
           method: "POST",
           body: formData
         });
-        if (!response.ok) {
-          throw new Error(`Erro ${response.status || ""}`.trim());
+
+        // Lê a resposta como texto primeiro
+        const responseText = await response.text();
+
+        // Tenta parsear como JSON, se falhar usa o texto diretamente
+        let responseData = {};
+        let responseMessage = responseText;
+        try {
+          responseData = JSON.parse(responseText);
+          // Se parseou como JSON, extrai a mensagem dos campos conhecidos
+          responseMessage = responseData.message || responseData.mensagem || responseData.msg || responseText;
+        } catch (e) {
+          // Não é JSON, usa o texto como mensagem direta
+          responseMessage = responseText;
         }
+
+        if (!response.ok) {
+          const errorMessage = responseData.message || responseData.erro || responseData.error || responseMessage || `Erro ${response.status || ''}`;
+          const errorTitle = responseData.title || responseData.titulo || null;
+          throw { message: errorMessage.trim(), title: errorTitle };
+        }
+
+        // Usa a mensagem do payload (texto ou JSON)
+        const successMessage = responseMessage || 'Sua matrícula foi enviada com sucesso!';
+        const successTitle = responseData.title || responseData.titulo || null;
+
         showSubmissionFeedback({
           success: true,
-          message: "Sua matrícula foi enviada com sucesso."
+          message: successMessage,
+          title: successTitle
         });
-        formElement.reset();
+
+        setTimeout(() => formElement.reset(), 500);
+
       } catch (error) {
+        const errorMessage = error.message || 'Não foi possível enviar sua matrícula. Tente novamente em instantes.';
+        const errorTitle = error.title || null;
+
         showSubmissionFeedback({
           success: false,
-          message: "Não foi possível enviar sua matrícula. Tente novamente em instantes."
+          message: errorMessage,
+          title: errorTitle
         });
       } finally {
         setSubmitting(false);
       }
     }
+
 
     function isWithinActiveWindow() {
       const now = new Date();
@@ -3404,13 +4049,16 @@
           return;
         }
         if (formLocked) return;
+
         validateEmails();
         validateWhatsapp();
         const numeroEntry = fieldRegistry.get("numero");
         if (numeroEntry) sanitizeNumeroInput(numeroEntry.input);
+
         const formValid = formElement.checkValidity();
         formElement.classList.add("was-validated");
         if (!formValid) return;
+
         submitFormData();
       });
 
